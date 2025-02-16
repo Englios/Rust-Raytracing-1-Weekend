@@ -83,6 +83,31 @@ mod tests{
         assert_eq!(list.objects.len(),1);
     }
 
+    #[test]
+    fn test_add_multiple_spheres(){
+        let mut list = HittableList::new();
+
+        let spheres = vec![
+            create_test_sphere(Vec3::default(), 0.5),
+            create_test_sphere(Vec3::default(), 0.5),
+            create_test_sphere(Vec3::default(), 0.5),
+        ];
+
+        list.add_objects(spheres);
+        assert_eq!(list.objects.len(),3);
+    }
+
+    #[test]
+    fn test_from_vec(){
+        let spheres = vec![
+            create_test_sphere(Vec3::default(), 0.5),
+            create_test_sphere(Vec3::default(), 0.5),
+            create_test_sphere(Vec3::default(), 0.5),
+        ];
+
+        let list = HittableList::from(spheres);
+        assert_eq!(list.objects.len(),3);
+    }
     
 
     #[test]
@@ -124,7 +149,7 @@ mod tests{
             0.5
         );
 
-        list.add(sphere1);
-        list.add(sphere2);
+        list.add(Box::new(sphere1));
+        list.add(Box::new(sphere2));
     }
 }
