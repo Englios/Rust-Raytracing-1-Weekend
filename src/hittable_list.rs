@@ -30,13 +30,13 @@ impl Hittable for HittableList {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool {
         
         let mut temp_rec = HitRecord::default();
-        let hit_anything = false;
-        let closest = t_max;
+        let mut hit_anything = false;
+        let mut closest = t_max;
 
         for object in &self.objects {
             if object.hit(ray,t_min,closest,&mut temp_rec) {
-                let hit_anything = true;
-                let closest = temp_rec.t();
+                hit_anything = true;
+                closest = temp_rec.t();
                 *rec = temp_rec;
             }
         }
@@ -57,11 +57,18 @@ mod tests{
     use core::f64;
 
     use super::*;
-    use crate::sphere::{self, Sphere};
+    use crate::sphere::Sphere;
     use crate::vec3::Vec3;
+
+    const EPSILON:f64 = 1e-6;
+
 
     fn create_test_sphere(center:Vec3,radius:f64) -> Box<dyn Hittable> {
         Box::new(Sphere::new(center,radius))
+    }
+
+    fn approx_eq(a:f64,b:f64) -> bool {
+        (a-b).abs() < EPSILON
     }
 
     #[test]
@@ -140,16 +147,29 @@ mod tests{
     #[test]
     fn test_hit_closest_object(){
         let mut list =  HittableList::new();
+        let mut rec = HitRecord::default();
+        let ray = Ray::new(
+            Vec3::new(0.0, 0.0, 0.0), 
+            Vec3::new(0.0, 0.0, -1.0)
+        );
+
         let sphere1 = Sphere::new(
             Vec3::new(0.0, 0.0 , -1.0), 
             0.5
         );
         let sphere2 =  Sphere::new(
-            Vec3::new(0.7, 0.0, -1.0),
+            Vec3::new(0.0, 0.0, -1.7),
             0.5
         );
 
         list.add(Box::new(sphere1));
         list.add(Box::new(sphere2));
+
+        let hit = list.hit(&ray, 0.0, f64::INFINITY, &mut rec);
+
+        assert!(hit);
+        assert!(approx_eq(rec.t(), 0.5));
+        assert!(approx_eq((rec.p() - Vec3::new(0.0, 0.0, -0.5)).length(), 0.0));
+        assert!(approx_eq((rec.normal() - Vec3::new(0.0, 0.0, 1.0)).length(), 0.0));
     }
 }
