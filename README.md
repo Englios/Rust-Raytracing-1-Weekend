@@ -5,6 +5,8 @@ A Rust implementation of Peter Shirley's "Ray Tracing in One Weekend" book. This
 ## About
 
 This is a learning project that implements a basic ray tracer in Rust. The implementation follows Peter Shirley's book while exploring Rust's unique features and comparing them with C++.
+Ironically named,this project will not be fully implemented in one weekend due to Skill Issue by me.
+I also use the aid of copilot to assist me in navigating through rust!
 
 ## Project Goals
 
