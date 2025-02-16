@@ -11,7 +11,7 @@ use std::ops::{
             };
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy,PartialEq)]
 pub struct Vec3 {
     pub x: f64,
     pub y: f64,
@@ -106,13 +106,13 @@ impl Div for Vec3 {
     }
 }
 
-impl Mul<Vec3> for Vec3 {
+impl Mul<Vec3> for f64 {
     type Output = Vec3;
-    fn mul(self,other:Vec3) -> Self::Output{
-        Self {
-            x: self.x + other.x,
-            y: self.y + other.y,
-            z: self.z + other.z
+    fn mul(self,other:Vec3) -> Vec3{
+        Vec3 {
+            x: self * other.x,
+            y: self * other.y,
+            z: self * other.z
         }
     }
 }
