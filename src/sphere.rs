@@ -55,7 +55,7 @@ impl Hittable for Sphere {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::vec3::Vec3;
+    use crate::{hittable_list::HittableList, vec3::Vec3};
 
     
     #[test]
@@ -158,4 +158,6 @@ mod tests {
         assert_eq!(rec.p(), Point3::new(0.0, 0.0, -4.0));
         assert_eq!(rec.normal(), Vec3::new(0.0, 0.0, -1.0));
     }
+
+
 }
