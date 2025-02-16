@@ -10,6 +10,7 @@ use std::ops::{
                 Neg
             };
 
+            
 
 #[derive(Debug, Clone, Copy,PartialEq)]
 pub struct Vec3 {
@@ -17,6 +18,8 @@ pub struct Vec3 {
     pub y: f64,
     pub z: f64,
 }
+
+pub type Point3 = Vec3;
 
 impl Vec3 {
     //Construct a new Vec3 instance
@@ -102,6 +105,28 @@ impl Div for Vec3 {
             x: self.x / other.x,
             y: self.y / other.y,
             z: self.z / other.z
+        }
+    }
+}
+
+impl Div<Vec3> for f64{
+    type Output = Vec3;
+    fn div(self,other:Vec3) -> Vec3{
+        Vec3 {
+            x: self * other.x,
+            y: self * other.y,
+            z: self * other.z
+        }
+    }
+}
+
+impl Div<f64> for Vec3{
+    type Output = Vec3;
+    fn div(self,other:f64) -> Vec3{
+        Vec3 {
+            x: self.x * other,
+            y: self.y * other,
+            z: self.z * other
         }
     }
 }
