@@ -11,16 +11,25 @@ impl Ray {
         Self{origin,direction}
     }
 
-    pub fn get_origin(&self) -> Vec3{
+    pub fn origin(&self) -> Vec3{
         self.origin
     }
 
-    pub fn get_direction(&self) -> Vec3{
+    pub fn direction(&self) -> Vec3{
         self.direction
     }
 
     pub fn at(self,t:f64) -> Vec3{
         self.origin + t*self.direction
+    }
+}
+
+impl Default for Ray{
+    fn default() -> Self {
+        Self {
+            origin: Vec3::default(),
+            direction: Vec3::default()
+        }
     }
 }
 
@@ -35,8 +44,8 @@ mod tests {
 
         let ray = Ray::new(origin,direction);
 
-        assert_eq!(ray.get_origin(),origin);
-        assert_eq!(ray.get_direction(),direction)
+        assert_eq!(ray.origin(),origin);
+        assert_eq!(ray.direction(),direction)
     }
 
     #[test]
