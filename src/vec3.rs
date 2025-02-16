@@ -21,6 +21,16 @@ pub struct Vec3 {
 
 pub type Point3 = Vec3;
 
+impl Default for Vec3 {
+    fn default() -> Self {
+        Self {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0
+        }
+    }
+}
+
 impl Vec3 {
     //Construct a new Vec3 instance
     pub fn new(x: f64, y: f64, z: f64) -> Self {
@@ -51,12 +61,17 @@ impl Vec3 {
         }
     }
 
-    pub fn unit_vector(&self) -> Self{
+    pub fn unit_vector(self) -> Self {
         let len = self.length();
-        Self {
-            x: self.x/len,
-            y: self.y/len,
-            z: self.z/len
+        if len == 0.0 {
+            self
+        } else {
+            // Handle negative zero by using abs() for very small values
+            Self {
+                x: if self.x.abs() < 1e-8 { 0.0 } else { self.x / len },
+                y: if self.y.abs() < 1e-8 { 0.0 } else { self.y / len },
+                z: if self.z.abs() < 1e-8 { 0.0 } else { self.z / len },
+            }
         }
     }
 }
@@ -113,9 +128,9 @@ impl Div<Vec3> for f64{
     type Output = Vec3;
     fn div(self,other:Vec3) -> Vec3{
         Vec3 {
-            x: self * other.x,
-            y: self * other.y,
-            z: self * other.z
+            x: self / other.x,
+            y: self / other.y,
+            z: self / other.z
         }
     }
 }
@@ -124,9 +139,9 @@ impl Div<f64> for Vec3{
     type Output = Vec3;
     fn div(self,other:f64) -> Vec3{
         Vec3 {
-            x: self.x * other,
-            y: self.y * other,
-            z: self.z * other
+            x: self.x / other,
+            y: self.y / other,
+            z: self.z / other
         }
     }
 }
@@ -290,6 +305,36 @@ mod tests {
         assert_eq!(result.x,1.0);
         assert_eq!(result.y,1.0);
         assert_eq!(result.z,1.0);
+    }
+
+    #[test]
+    fn test_vec3_division() {
+        let v = Vec3::new(2.0, 4.0, 6.0);
+        let result = v / 2.0;
+        assert_eq!(result, Vec3::new(1.0, 2.0, 3.0));
+    }
+
+    #[test]
+    fn test_negative_zero_handling() {
+        let v = Vec3::new(-0.0, -0.0, 1.0);
+        let unit = v.unit_vector();
+        
+        assert_eq!(unit.x, 0.0);
+        assert_eq!(unit.y, 0.0);
+        assert_eq!(unit.z, 1.0);
+        
+        // Test that length is still 1.0
+        assert!((unit.length() - 1.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_very_small_components() {
+        let v = Vec3::new(1e-10, -1e-10, 1.0);
+        let unit = v.unit_vector();
+        
+        assert_eq!(unit.x, 0.0);
+        assert_eq!(unit.y, 0.0);
+        assert!((unit.z - 1.0).abs() < 1e-6);
     }
 }
 
