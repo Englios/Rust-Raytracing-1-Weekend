@@ -6,12 +6,23 @@ mod sphere;
 mod color;
 mod hittable_list;
 mod hittable;
+mod commons;
 
+use commons::INFINITY;
+use hittable::{HitRecord, Hittable};
+use hittable_list::HittableList;
 use ray::Ray;
+use sphere::Sphere;
 use vec3::Vec3;
 use color::{Color,write_color};
 
-fn ray_color(r: &Ray) -> Color{
+fn ray_color(r: &Ray,world: &dyn Hittable) -> Color{
+    let mut rec = HitRecord::default();
+
+    if world.hit(r, 0.0, INFINITY, &mut rec) {
+        return 0.5 * (rec.normal() + Color::new(1.0,1.0, 1.0));
+    }
+
     let unit_direction = r.direction().unit_vector();
     let a = 0.5 * (unit_direction.y + 1.0);
 
@@ -30,6 +41,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     let image_width = 400;
     let mut image_height = (image_width as f64 / aspect_ratio) as i32;
     image_height = if image_height < 1 {1} else {image_height};
+
+    // World
+    let mut world = HittableList::new();
+    let spheres: Vec<Box<dyn Hittable>> = vec![
+        Box::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0),0.5)),
+        Box::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.00))
+    ];
+    world.add_objects(spheres);
 
     //Camera
     let focal_lenght = 1.0;
@@ -72,7 +91,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             let ray_direction = pixel_center - camera_center;
             let ray = Ray::new(camera_center,ray_direction);
 
-            let pixel_color = ray_color(&ray);
+            let pixel_color = ray_color(&ray,&world);
             write_color(&mut writer, pixel_color)?;
         }
     }
@@ -88,35 +107,34 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_ray_color(){
+    fn test_ray_color() {
         let origin = Vec3::new(0.0, 0.0, 0.0);
         let direction = Vec3::new(0.0, 1.0, 0.0);
-
-        let ray = Ray::new(
-            origin,
-            direction
-        );
-
-        let color = ray_color(&ray);
+        let ray = Ray::new(origin, direction);
+        
+        // Create a world for testing
+        let world = HittableList::new();
+        
+        let color = ray_color(&ray, &world);
         assert!(color.y > 0.5);
     }
 
     #[test]
-    fn test_ray_color_gradient(){
+    fn test_ray_color_gradient() {
+        let world = HittableList::new();
+        
         let ray_up = Ray::new(
             Vec3::new(0.0, 0.0, 0.0),
             Vec3::new(0.0, 1.0, 0.0)
         );
-        let color_up = ray_color(&ray_up);
+        let color_up = ray_color(&ray_up, &world);
         
         let ray_down = Ray::new(
             Vec3::new(0.0, 0.0, 0.0),
             Vec3::new(0.0, -1.0, 0.0)
         );
-        let color_down = ray_color(&ray_down);
+        let color_down = ray_color(&ray_down, &world);
 
-        // Up should be more blue (lower values)
-        // White values are at 1.0 or near 1.0
         assert!(color_down.y > color_up.y);
     }
 }
