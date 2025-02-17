@@ -2,6 +2,7 @@ use super::*;
 use crate::vec3::Point3;
 use std::io::{self,BufWriter,Write};
 use std::fs::File;
+use interval::Interval;
 
 pub struct Camera{
     pub aspect_ratio : f64,
@@ -66,7 +67,7 @@ impl Camera {
     fn ray_color(r: &Ray,world: &dyn Hittable) -> Color{
         let mut rec = HitRecord::default();
     
-        if world.hit(r, 0.0, INFINITY, &mut rec) {
+        if world.hit(r, Interval::new(0.0, INFINITY), &mut rec) {
             return 0.5 * (rec.normal() + Color::new(1.0,1.0, 1.0));
         }
     

@@ -8,6 +8,7 @@ mod hittable_list;
 mod hittable;
 mod commons;
 mod camera;
+mod interval;
 
 use commons::INFINITY;
 use hittable::{HitRecord, Hittable};
