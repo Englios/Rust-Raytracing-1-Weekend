@@ -33,10 +33,10 @@ impl Hittable for Sphere {
 
         //Find nearest root in acceptable range
         let mut root = (h - sqrtd) / a;
-        if  t.surrounds(root){
+        if  !t.surrounds(root){
             root = (h + sqrtd) / a;
             
-            if t.surrounds(root) {
+            if !t.surrounds(root) {
                 return false;
             }
         }
@@ -80,17 +80,17 @@ mod tests {
     fn test_ray_hits_sphere(){
         let sphere = Sphere::new(Point3::new(0.0, 0.0, 0.0), 1.0);
         let ray = Ray::new(
-            Point3::new(0.0, 0.0, -5.0),
-            Vec3::new(0.0, 0.0, 1.0)
+            Point3::new(0.0, 0.0, 0.0),
+            Vec3::new(0.0, 0.0, -1.0)
         );
         let mut rec = HitRecord::default();
 
         let hit = sphere.hit(&ray, Interval::new(0.0, INFINITY), &mut rec);
 
         assert!(hit);
-        assert_eq!(rec.t(), 4.0);
+        assert_eq!(rec.t(),1.0);
         assert_eq!(rec.p(), Point3::new(0.0, 0.0, -1.0));
-        assert_eq!(rec.normal(), Vec3::new(0.0, 0.0, -1.0));
+        assert_eq!(rec.normal(), Vec3::new(0.0, 0.0, 1.0));
     }
 
     #[test]
