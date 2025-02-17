@@ -26,8 +26,14 @@ fn main() -> io::Result<()>{
     // World
     let mut world = HittableList::new();
     let spheres: Vec<Box<dyn Hittable>> = vec![
-        Box::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0),0.5)),
-        Box::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.00))
+        // Center sphere
+        Box::new(Sphere::new(Vec3::new(0.0, 0.0, -2.5), 0.5)),
+        // Left sphere
+        Box::new(Sphere::new(Vec3::new(-1.0, 0.0, -3.0), 0.5)),
+        // Right sphere
+        Box::new(Sphere::new(Vec3::new(1.0, 0.0, -3.5), 0.5)),
+        // Ground sphere
+        Box::new(Sphere::new(Vec3::new(0.0, -100.5, -3.0), 100.0))
     ];
     world.add_objects(spheres);
 

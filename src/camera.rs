@@ -49,7 +49,7 @@ impl Camera {
         self.center = Point3::new(0.0, 0.0, 0.0);
     
         // View Port Dimensions
-        let focal_length = 1.0;  // Fixed typo in 'length'
+        let focal_length = 0.5;  
         let viewport_height = 2.0;
         let viewport_width = viewport_height * ((self.image_width as f64) / (self.image_height as f64));
     
@@ -97,7 +97,7 @@ impl Camera {
                 let pixel_center = self.pixel00_loc 
                     + (i as f64 * self.pixel_du) 
                     + (j as f64 * self.pixel_dv);
-                let ray_direction = pixel_center - self.center;
+                let ray_direction = (pixel_center - self.center).unit_vector();
                 let ray = Ray::new(self.center, ray_direction);
     
                 let pixel_color = Camera::ray_color(&ray, world);
