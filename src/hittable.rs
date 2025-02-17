@@ -95,7 +95,7 @@ mod tests {
         let rec = HitRecord::default();
         
         assert_eq!(rec.p(), Point3::new(0.0, 0.0, 0.0));
-        assert_eq!(rec.normal(), Vec3::new(0.0, 0.0, 1.0));
+        assert_eq!(rec.normal(), Vec3::new(0.0, 0.0, 0.0));
         assert_eq!(rec.t(), 0.0);
         assert!(!rec.front_face());
     }

@@ -1,5 +1,3 @@
-use std::cmp::Ordering;
-
 use crate::vec3::Point3;
 use crate::hittable::{Hittable,HitRecord};
 use crate::ray::Ray;
