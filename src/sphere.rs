@@ -1,3 +1,4 @@
+use crate::interval::Interval;
 use crate::vec3::Point3;
 use crate::hittable::{Hittable,HitRecord};
 use crate::ray::Ray;
@@ -19,7 +20,7 @@ impl Sphere {
 }
 
 impl Hittable for Sphere {
-    fn hit(&self,r:&Ray,t_min:f64,t_max:f64,rec:&mut HitRecord) -> bool {
+    fn hit(&self,r:&Ray,t: &Interval,rec:&mut HitRecord) -> bool {
         let oc = self.center - r.origin();
         let a = r.direction().length_squared();
         let h: f64 = r.direction().dot(oc);
@@ -32,10 +33,10 @@ impl Hittable for Sphere {
 
         //Find nearest root in acceptable range
         let mut root = (h - sqrtd) / a;
-        if root <= t_min || t_max <= root{
+        if !t.surrounds(root){
             root = (h + sqrtd) / a;
             
-            if root <= t_min || t_max <= root {
+            if!t.surrounds(root) {
                 return false;
             }
         }
@@ -53,7 +54,7 @@ impl Hittable for Sphere {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{hittable_list::HittableList, vec3::Vec3};
+    use crate::{commons::INFINITY, hittable_list::HittableList, vec3::Vec3};
 
     
     #[test]
@@ -84,7 +85,7 @@ mod tests {
         );
         let mut rec = HitRecord::default();
 
-        let hit = sphere.hit(&ray, 0.0, f64::INFINITY, &mut rec);
+        let hit = sphere.hit(&ray, &Interval::new(0.0, INFINITY), &mut rec);
 
         assert!(hit);
         assert_eq!(rec.t(), 4.0);
@@ -101,7 +102,7 @@ mod tests {
         );
         let mut rec = HitRecord::default();
 
-        let hit = sphere.hit(&ray, 0.0, f64::INFINITY, &mut rec);
+        let hit = sphere.hit(&ray,  &Interval::new(0.0, INFINITY), &mut rec);
 
         assert!(!hit);
     }
@@ -115,7 +116,7 @@ mod tests {
         );
         let mut rec = HitRecord::default();
 
-        let hit = sphere.hit(&ray, 0.0, f64::INFINITY, &mut rec);
+        let hit = sphere.hit(&ray, &Interval::new(0.0, INFINITY), &mut rec);
 
         assert!(hit);
         assert_eq!(rec.t(), 1.0);
@@ -132,7 +133,7 @@ mod tests {
         );
         let mut rec = HitRecord::default();
 
-        let hit = sphere.hit(&ray, 2.0, f64::INFINITY, &mut rec);
+        let hit = sphere.hit(&ray, &Interval::new(0.0, INFINITY), &mut rec);
 
         assert!(hit);
         assert_eq!(rec.t(), 4.0);
@@ -149,7 +150,7 @@ mod tests {
         );
         let mut rec = HitRecord::default();
 
-        let hit = sphere.hit(&ray, 0.0, 3.0, &mut rec);
+        let hit = sphere.hit(&ray, &Interval::new(0.0, 3.0), &mut rec);
 
         assert!(hit);
         assert_eq!(rec.t(), 1.0);
