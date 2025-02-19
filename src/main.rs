@@ -38,7 +38,11 @@ fn main() -> io::Result<()>{
     ];
     world.add_objects(spheres);
 
-    let mut cam = Camera::new(16.0/9.0, 400);
+    let mut cam = Camera::new(
+                                        16.0/9.0, 
+                                        400,
+                                        100
+                                    );
 
     cam.render(&world)?;
     Ok(())
