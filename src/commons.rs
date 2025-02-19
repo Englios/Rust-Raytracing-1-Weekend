@@ -15,6 +15,7 @@ pub fn random_double_range(min:f64,max:f64) -> f64{
     rand::random_range(min..max)
 }
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
