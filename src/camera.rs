@@ -1,4 +1,5 @@
 use super::*;
+use crate::commons::random_double;
 use crate::interval::Interval;
 use crate::vec3::Point3;
 use std::io::{self,BufWriter,Write};
@@ -7,7 +8,9 @@ use std::fs::File;
 pub struct Camera{
     pub aspect_ratio : f64,
     pub image_width : i32,
+    pub samples_per_pixel : i32,
     image_height :i32,
+    pixel_samples_scale: f64,
     center : Point3,
     pixel00_loc :Point3,
     pixel_du : Vec3,
@@ -20,7 +23,9 @@ impl Default for Camera {
         Self {
             aspect_ratio: 1.0,
             image_width: 100,
-            image_height: 100, // Calculated based on aspect_ratio
+            samples_per_pixel: 100,
+            image_height: 100,
+            pixel_samples_scale: 1.0,
             center: Point3::new(0.0, 0.0, 0.0),
             pixel00_loc: Point3::new(0.0, 0.0, 0.0),
             pixel_du: Vec3::new(0.0, 0.0, 0.0),
@@ -30,11 +35,13 @@ impl Default for Camera {
 }
 
 impl Camera {
-    pub fn new(aspect_ratio:f64,image_width:i32) -> Self {
+    pub fn new(aspect_ratio:f64,image_width:i32,samples_per_pixel:i32) -> Self {
         Self {
             aspect_ratio,
             image_width,
+            samples_per_pixel,
             image_height: 0, // Calculated based on aspect_ratio
+            pixel_samples_scale:0.0,
             center: Point3::new(0.0, 0.0, 0.0),
             pixel00_loc: Point3::new(0.0, 0.0, 0.0),
             pixel_du: Vec3::new(0.0, 0.0, 0.0),
@@ -46,6 +53,7 @@ impl Camera {
     fn initialize(&mut self) {
         self.image_height = (self.image_width as f64 / self.aspect_ratio) as i32;
         self.image_height = if self.image_height < 1 {1} else {self.image_height};
+        self.pixel_samples_scale = 1.0 / self.samples_per_pixel as f64;
     
         self.center = Point3::new(0.0, 0.0, 0.0);
     
@@ -81,6 +89,27 @@ impl Camera {
         + a * blue // Blue
     }
 
+    fn sample_square() -> Vec3 {
+        Vec3{
+            x: random_double() - 0.5, 
+            y: random_double() - 0.5, 
+            z: 0.0,
+        }
+    }
+
+    fn get_ray(&self,i:i32,j:i32) -> Ray {
+        let offset = Camera::sample_square();
+
+        let pixel_center = self.pixel00_loc 
+                    + ((i as f64 + offset.x) * self.pixel_du) 
+                    + ((j as f64 + offset.y) * self.pixel_dv);
+
+        let ray_direction = (pixel_center - self.center).unit_vector();
+
+        Ray::new(self.center, ray_direction)
+    }
+
+
     pub fn render(&mut self, world: &dyn Hittable) -> io::Result<()> {
         self.initialize();
     
@@ -95,14 +124,17 @@ impl Camera {
             eprint!("\rScanlines remaining: {} ", self.image_height - j);
             io::stderr().flush()?;
             for i in 0..self.image_width {
-                let pixel_center = self.pixel00_loc 
-                    + (i as f64 * self.pixel_du) 
-                    + (j as f64 * self.pixel_dv);
-                let ray_direction = (pixel_center - self.center).unit_vector();
-                let ray = Ray::new(self.center, ray_direction);
-    
-                let pixel_color = Camera::ray_color(&ray, world);
-                write_color(&mut writer, pixel_color)?;
+                let mut pixel_color = Color::new(0.0, 0.0, 0.0);
+
+                for sample in 0..self.samples_per_pixel {
+                    let r = self.get_ray(i, j);
+                    pixel_color += Camera::ray_color(&r, world);
+                }
+
+                write_color(
+                    &mut writer, 
+                    pixel_color * self.pixel_samples_scale
+                )?;
             }
         }
     
@@ -125,14 +157,14 @@ mod tests {
 
     #[test]
     fn test_camera_new() {
-        let camera = Camera::new(2.0, 200);
+        let camera = Camera::new(2.0, 200,100);
         assert_eq!(camera.aspect_ratio, 2.0);
         assert_eq!(camera.image_width, 200);
     }
 
     #[test]
     fn test_camera_initialize() {
-        let mut camera = Camera::new(2.0, 200);
+        let mut camera = Camera::new(2.0, 200,100);
         camera.initialize();
         assert_eq!(camera.image_height, 100); // 200/2.0 = 100
         assert!(camera.pixel_du.length() > 0.0);
