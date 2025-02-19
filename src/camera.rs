@@ -1,4 +1,5 @@
 use super::*;
+use crate::commons::random_double;
 use crate::vec3::Point3;
 use std::io::{self,BufWriter,Write};
 use std::fs::File;
@@ -7,6 +8,7 @@ use interval::Interval;
 pub struct Camera{
     pub aspect_ratio : f64,
     pub image_width : i32,
+    pub samples_per_pixel:i32,
     image_height :i32,
     center : Point3,
     pixel00_loc :Point3,
@@ -20,7 +22,8 @@ impl Default for Camera {
         Self {
             aspect_ratio: 1.0,
             image_width: 100,
-            image_height: 100, // Calculated based on aspect_ratio
+            samples_per_pixel: 10,
+            image_height: 100,
             center: Point3::new(0.0, 0.0, 0.0),
             pixel00_loc: Point3::new(0.0, 0.0, 0.0),
             pixel_du: Vec3::new(0.0, 0.0, 0.0),
@@ -30,10 +33,11 @@ impl Default for Camera {
 }
 
 impl Camera {
-    pub fn new(aspect_ratio:f64,image_width:i32) -> Self {
+    pub fn new(aspect_ratio:f64,image_width:i32,samples_per_pixel:i32 ) -> Self {
         Self {
             aspect_ratio,
             image_width,
+            samples_per_pixel,
             image_height: 0, // Calculated based on aspect_ratio
             center: Point3::new(0.0, 0.0, 0.0),
             pixel00_loc: Point3::new(0.0, 0.0, 0.0),
@@ -79,6 +83,20 @@ impl Camera {
     
         (1.0 - a) * white //White
         + a * blue // Blue
+    }
+
+    fn sample_square() -> Vec3 {
+        Vec3::new(
+            random_double() - 0.5, 
+            random_double() - 0.5, 
+            0.0)
+    }
+
+    fn get_ray(&self,i:i32,j:i32) {
+        let offset = Camera::sample_square();
+
+        let pixel_sample = self.pixel00_loc 
+                                + i + offset.x() * self.pixel_du
     }
 
     pub fn render(&mut self, world: &dyn Hittable) -> io::Result<()> {
