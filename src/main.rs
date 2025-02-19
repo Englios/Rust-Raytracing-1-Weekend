@@ -1,4 +1,4 @@
-use std::{error::Error, fs::File, io::{self, BufWriter, Write}};
+use std::io;
 
 mod vec3;
 mod ray;
@@ -8,6 +8,7 @@ mod hittable_list;
 mod hittable;
 mod commons;
 mod camera;
+mod interval;
 
 use commons::INFINITY;
 use hittable::{HitRecord, Hittable};
@@ -29,11 +30,11 @@ fn main() -> io::Result<()>{
         // Center sphere
         Box::new(Sphere::new(Vec3::new(0.0, 0.0, -2.5), 0.5)),
         // Left sphere
-        Box::new(Sphere::new(Vec3::new(-1.0, 0.0, -3.0), 0.5)),
+        Box::new(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), 0.5)),
         // Right sphere
         Box::new(Sphere::new(Vec3::new(1.0, 0.0, -3.5), 0.5)),
         // Ground sphere
-        Box::new(Sphere::new(Vec3::new(0.0, -100.5, -3.0), 100.0))
+        Box::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0))
     ];
     world.add_objects(spheres);
 
