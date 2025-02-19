@@ -1,3 +1,4 @@
+use crate::interval::Interval;
 use crate::ray::Ray;
 use crate::hittable::{HitRecord,Hittable};
 
@@ -27,14 +28,14 @@ impl HittableList {
 
 impl Hittable for HittableList {
 
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool {
+    fn hit(&self, ray: &Ray, t: &Interval, rec: &mut HitRecord) -> bool {
         
         let mut temp_rec = HitRecord::default();
         let mut hit_anything = false;
-        let mut closest = t_max;
+        let mut closest = t.max();
 
         for object in &self.objects {
-            if object.hit(ray,t_min,closest,&mut temp_rec) {
+            if object.hit(ray,&Interval::new(0.0, closest),&mut temp_rec) {
                 hit_anything = true;
                 closest = temp_rec.t();
                 *rec = temp_rec;
@@ -57,6 +58,7 @@ mod tests{
     use core::f64;
 
     use super::*;
+    use crate::commons::INFINITY;
     use crate::sphere::Sphere;
     use crate::vec3::Vec3;
 
@@ -139,7 +141,7 @@ mod tests{
         let mut rec = HitRecord::default();
 
         for object in list.objects {
-            let hit = object.hit(&ray, 0.0, f64::INFINITY, &mut rec);
+            let hit = object.hit(&ray, &&Interval::new(0.0,INFINITY), &mut rec);
             assert!(hit)
         }
     }
@@ -165,7 +167,7 @@ mod tests{
         list.add(Box::new(sphere1));
         list.add(Box::new(sphere2));
 
-        let hit = list.hit(&ray, 0.0, f64::INFINITY, &mut rec);
+        let hit = list.hit(&ray, &Interval::new(0.0, INFINITY), &mut rec);
 
         assert!(hit);
         assert!(approx_eq(rec.t(), 0.5));
