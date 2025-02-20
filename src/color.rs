@@ -3,6 +3,10 @@ use std::io::{self, Write};
 
 pub type Color = Vec3;
 
+pub fn default() -> Vec3 {
+    Vec3::new(0.0, 0.0, 0.0)
+}
+
 pub fn write_color<W: Write>(writer: &mut W, pixel_color: Color) -> io::Result<()> {
 
     let r: f64 = linear_to_gamma(pixel_color.x);
