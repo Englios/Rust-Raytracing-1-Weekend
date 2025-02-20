@@ -38,7 +38,7 @@ impl Hittable for HittableList {
             if object.hit(ray,&Interval::new(0.0, closest),&mut temp_rec) {
                 hit_anything = true;
                 closest = temp_rec.t();
-                *rec = temp_rec;
+                *rec = temp_rec.clone();
             }
         }
 
@@ -61,12 +61,13 @@ mod tests{
     use crate::commons::INFINITY;
     use crate::sphere::Sphere;
     use crate::vec3::Vec3;
+    use crate::material::Lambertian;
+    use std::sync::Arc;
 
     const EPSILON:f64 = 1e-6;
-
-
     fn create_test_sphere(center:Vec3,radius:f64) -> Box<dyn Hittable> {
-        Box::new(Sphere::new(center,radius))
+        let material = Arc::new(Lambertian::new(Vec3::new(0.5, 0.5, 0.5)));
+        Box::new(Sphere::new(center, radius, material))
     }
 
     fn approx_eq(a:f64,b:f64) -> bool {
@@ -155,13 +156,16 @@ mod tests{
             Vec3::new(0.0, 0.0, -1.0)
         );
 
+        let material = Arc::new(Lambertian::new(Vec3::new(0.5, 0.5, 0.5)));
         let sphere1 = Sphere::new(
             Vec3::new(0.0, 0.0 , -1.0), 
-            0.5
+            0.5,
+            material.clone()
         );
-        let sphere2 =  Sphere::new(
+        let sphere2 = Sphere::new(
             Vec3::new(0.0, 0.0, -1.7),
-            0.5
+            0.5,
+            material
         );
 
         list.add(Box::new(sphere1));
