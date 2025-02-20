@@ -18,11 +18,12 @@ use sphere::Sphere;
 use vec3::Vec3;
 use camera::Camera;
 use color::{Color,write_color};
-
-
+use dotenv::dotenv;
 
 
 fn main() -> io::Result<()>{
+    //Load enviroment variables from .env
+    dotenv().ok();
 
     // World
     let mut world = HittableList::new();
@@ -41,7 +42,8 @@ fn main() -> io::Result<()>{
     let mut cam = Camera::new(
                                         16.0/9.0, 
                                         400,
-                                        2
+                                        100,
+                                        50
                                     );
 
     cam.render(&world)?;
