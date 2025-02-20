@@ -10,6 +10,8 @@ use std::ops::{
                 Neg
             };
 
+use crate::commons::{random_double, random_double_range};
+
             
 
 #[derive(Debug, Clone, Copy,PartialEq)]
@@ -74,6 +76,58 @@ impl Vec3 {
             }
         }
     }
+
+    pub fn random() -> Vec3 {
+        Vec3 {
+            x: random_double(),
+            y: random_double(),
+            z: random_double()
+        }
+    }
+
+    pub fn random_range(min:f64,max:f64) -> Vec3 {
+        Vec3 {
+            x: random_double_range(min, max),
+            y: random_double_range(min, max),
+            z: random_double_range(min, max)
+        }
+    }
+
+    pub fn random_unit_vector() -> Vec3{
+        loop {
+            let p = Vec3::random();
+            let lensq = p.length_squared();
+
+            if 1e-160 < lensq && lensq <= 1.0 {
+                return p / lensq.sqrt();
+            }
+        }
+    }
+
+    pub fn random_on_hemisphere(normal: &Vec3) -> Vec3 {
+        let on_unit_sphere = Vec3::random_unit_vector();
+
+        if on_unit_sphere.dot(*normal) > 0.0 {
+            on_unit_sphere
+        }
+        else {
+            -on_unit_sphere
+        }
+        
+    }
+
+    //getters
+    pub fn x(&self) -> f64 {
+        self.x
+    }
+
+    pub fn y(&self) -> f64 {
+        self.y
+    }
+
+    pub fn z(&self) -> f64 {
+        self.z
+    }
 }
 
 // Associate Methods
@@ -97,6 +151,18 @@ impl Add for Vec3 {
             x: self.x + other.x,
             y: self.y + other.y,
             z: self.z + other.z
+        }
+    }
+}
+
+impl Add<i32> for Vec3 {
+    type Output = Vec3;
+
+    fn add(self, other: i32) -> Self::Output {
+        Self {
+            x: self.x + other as f64,
+            y: self.y + other as f64,
+            z: self.z + other as f64
         }
     }
 }
@@ -335,6 +401,19 @@ mod tests {
         assert_eq!(unit.x, 0.0);
         assert_eq!(unit.y, 0.0);
         assert!((unit.z - 1.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_ranndom_on_hemisphere() {
+        let normal = Vec3::new(0.0, 0.0, 1.0);
+
+        for _ in 0..100 {
+            let v = Vec3::random_on_hemisphere(&normal);
+
+            // Test unit length
+            assert!((v.length() - 1.0).abs() < 1e-6);
+            assert!(v.dot(normal) >= 0.0);
+        }
     }
 }
 
