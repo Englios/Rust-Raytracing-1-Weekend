@@ -1,4 +1,5 @@
 use super::*;
+use crate::color::Color;
 use crate::commons::random_double;
 use crate::interval::Interval;
 use crate::vec3::Point3;
@@ -85,14 +86,14 @@ impl Camera {
         let mut rec = HitRecord::default();
     
         if world.hit(r, &Interval::new(0.001, INFINITY), &mut rec) {
-            // Lambertian Sphere's implemetation
-            let direction = rec.normal() + Vec3::random_unit_vector();
-            
-            return 0.5 * Camera::ray_color(
-                &Ray::new(rec.p(), direction),
-                depth,
-                world
-            );
+            let mut scattered = Ray::default();
+            let mut attenuation = Color::default();
+
+            if rec.mat.scatter(&r, &rec, &mut attenuation, &mut scattered) {
+                let recursive_color = Camera::ray_color(&scattered, depth - 1, world);
+                return attenuation * recursive_color;
+            }
+            return Color::new(0.0, 0.0, 0.0);
         }
     
         let unit_direction = r.direction().unit_vector();
@@ -101,8 +102,7 @@ impl Camera {
         let white =  Color::new(1.0, 1.0, 1.0);
         let blue =  Color::new(0.5, 0.7, 1.0);
     
-        (1.0 - a) * white //White
-        + a * blue // Blue
+        (1.0 - a) * white + a * blue
     }
 
     fn sample_square() -> Vec3 {
