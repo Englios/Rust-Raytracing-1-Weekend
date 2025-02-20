@@ -77,6 +77,12 @@ impl Vec3 {
         }
     }
 
+    pub fn near_zero(&self) -> bool {
+        let s = 1e-8;
+
+        self.x.abs() < s && self.y.abs() < s && self.z.abs() < s
+    }
+
     pub fn random() -> Vec3 {
         Vec3 {
             x: random_double(),
@@ -114,6 +120,10 @@ impl Vec3 {
             -on_unit_sphere
         }
         
+    }
+
+    pub fn reflect(v : &Vec3,n: &Vec3) -> Vec3 {
+        *v - (2.0*v.dot(*n)) * *n
     }
 
     //getters
@@ -230,6 +240,17 @@ impl Mul<f64> for Vec3 {
             x: self.x * scalar,
             y: self.y * scalar,
             z: self.z * scalar
+        }
+    }
+}
+
+impl Mul<Vec3> for Vec3 {
+    type Output = Vec3;
+    fn mul(self, rhs: Vec3) -> Vec3 {
+        Vec3 {
+            x: self.x * rhs.x,
+            y: self.y * rhs.y,
+            z: self.z * rhs.z,
         }
     }
 }
@@ -414,6 +435,22 @@ mod tests {
             assert!((v.length() - 1.0).abs() < 1e-6);
             assert!(v.dot(normal) >= 0.0);
         }
+    }
+
+    #[test]
+    fn test_reflect() {
+        // Test reflection off a horizontal surface
+        let v = Vec3::new(1.0, -1.0, 0.0);
+        let n = Vec3::new(0.0, 1.0, 0.0);
+        let reflected = Vec3::reflect(&v, &n);
+        
+        // Expected: (1.0, 1.0, 0.0)
+        assert!((reflected.x - 1.0).abs() < 1e-6);
+        assert!((reflected.y - 1.0).abs() < 1e-6);
+        assert!(reflected.z.abs() < 1e-6);
+
+        // Test that reflection preserves length
+        assert!((v.length() - reflected.length()).abs() < 1e-6);
     }
 }
 
