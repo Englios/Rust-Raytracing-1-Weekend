@@ -41,7 +41,7 @@ fn main() -> io::Result<()>{
     let mut cam = Camera::new(
                                         16.0/9.0, 
                                         400,
-                                        100
+                                        2
                                     );
 
     cam.render(&world)?;
