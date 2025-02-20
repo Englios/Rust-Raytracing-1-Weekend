@@ -1,13 +1,17 @@
+use std::sync::Arc;
+
 use crate::interval::Interval;
+use crate::material::{Material, Metal};
 use crate::vec3::{Point3,Vec3};
 use crate::ray::Ray;
 
-#[derive(Debug,Clone,Copy)]
+#[derive(Clone)]
 pub struct HitRecord {
-    p: Point3,
-    normal : Vec3,
-    t: f64,
-    front_face:bool
+    pub p: Point3,
+    pub normal : Vec3,
+    pub mat: Arc<dyn Material>,
+    pub t: f64,
+    pub front_face:bool
 }
 
 pub trait Hittable {
@@ -15,8 +19,8 @@ pub trait Hittable {
 }
 
 impl HitRecord {
-    pub fn new(p:Point3,normal:Vec3,t:f64)-> Self {
-        Self{p,normal,t,front_face:false}
+    pub fn new(p:Point3,normal:Vec3,mat:Arc<dyn Material>,t:f64)-> Self {
+        Self{p,normal,mat,t,front_face:false}
     }
 
     //Getter
@@ -68,6 +72,7 @@ impl Default for HitRecord {
         Self {
             p: Point3::new(0.0, 0.0, 0.0),
             normal: Vec3::new(0.0, 0.0, 0.0),
+            mat: Arc::new(Metal::new(Vec3::new(0.0, 0.0, 0.0))),
             t: 0.0,
             front_face: false,
         }
@@ -83,7 +88,7 @@ mod tests {
     fn test_hit_record_creation() {
         let p = Point3::new(1.0, 2.0, 3.0);
         let normal = Vec3::new(0.0, 1.0, 0.0);
-        let rec = HitRecord::new(p, normal, 1.0);
+        let rec = HitRecord::new(p, normal, Arc::new(Metal::new(Vec3::new(0.0, 0.0, 0.0))), 1.0);
 
         assert_eq!(rec.p(), p);
         assert_eq!(rec.normal(), normal);
