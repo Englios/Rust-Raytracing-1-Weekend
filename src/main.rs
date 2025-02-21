@@ -14,7 +14,7 @@ mod material;
 use commons::INFINITY;
 use hittable::{HitRecord, Hittable};
 use hittable_list::HittableList;
-use material::Metal;
+use material::{Dielectric, Metal};
 use ray::Ray;
 use sphere::Sphere;
 use vec3::Vec3;
@@ -35,8 +35,8 @@ fn main() -> io::Result<()>{
 
     let material_ground = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
     let material_center = Arc::new(Lambertian::new(Color::new(0.1, 0.2, 0.5)));
-    let material_left = Arc::new(Metal::new(Color::new(0.8, 0.8, 0.8)));
-    let material_right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2)));
+    let material_left = Arc::new(Dielectric::new(1.5));
+    let material_right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2),1.0));
 
     let spheres: Vec<Box<dyn Hittable>> = vec![
         // Center sphere
