@@ -72,7 +72,10 @@ impl Default for HitRecord {
         Self {
             p: Point3::new(0.0, 0.0, 0.0),
             normal: Vec3::new(0.0, 0.0, 0.0),
-            mat: Arc::new(Metal::new(Vec3::new(0.0, 0.0, 0.0))),
+            mat: Arc::new(Metal::new(
+                Vec3::new(0.0, 0.0, 0.0),
+                1.0)
+            ),
             t: 0.0,
             front_face: false,
         }
@@ -88,7 +91,13 @@ mod tests {
     fn test_hit_record_creation() {
         let p = Point3::new(1.0, 2.0, 3.0);
         let normal = Vec3::new(0.0, 1.0, 0.0);
-        let rec = HitRecord::new(p, normal, Arc::new(Metal::new(Vec3::new(0.0, 0.0, 0.0))), 1.0);
+        let rec = HitRecord::new(p, normal, 
+                                        Arc::new(
+                                            Metal::new(
+                                                Vec3::new(0.0, 0.0, 0.0)
+                                                ,1.0)
+                                        ), 
+                                        1.0);
 
         assert_eq!(rec.p(), p);
         assert_eq!(rec.normal(), normal);
