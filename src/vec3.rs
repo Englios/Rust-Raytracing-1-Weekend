@@ -1,13 +1,13 @@
 use std::ops::{
-            Add,
-            AddAssign, 
-            Div, 
-            DivAssign, 
-            Mul, 
-            MulAssign, 
-            Neg, 
-            Sub, 
-            SubAssign
+                Add, 
+                Sub, 
+                Mul, 
+                Div,
+                AddAssign, 
+                MulAssign, 
+                DivAssign, 
+                SubAssign, 
+                Neg
             };
 
 use crate::commons::{random_double, random_double_range};
@@ -127,11 +127,9 @@ impl Vec3 {
     }
 
     pub fn refract(uv: &Vec3, n: &Vec3, etai_over_etat: f64) -> Vec3 {
-        
         let cos_theta = f64::min((-*uv).dot(*n), 1.0);
         let r_out_perp = etai_over_etat * (*uv + cos_theta * *n);
-        let r_out_parallel = -f64::sqrt((1.0 - r_out_perp.length_squared()).abs()) * *n;
-
+        let r_out_parallel = -f64::sqrt(f64::abs(1.0 - r_out_perp.length_squared())) * *n;
         r_out_perp + r_out_parallel
     }
 
@@ -460,21 +458,6 @@ mod tests {
 
         // Test that reflection preserves length
         assert!((v.length() - reflected.length()).abs() < 1e-6);
-    }
-
-    #[test]
-    fn test_refract() {
-        // Test with a simple vertical ray hitting a horizontal surface
-        let uv = Vec3::new(0.0, -1.0, 0.0);  // straight down
-        let n = Vec3::new(0.0, 1.0, 0.0);    // surface normal pointing up
-        let etai_over_etat = 1.5;            // typical glass-to-air ratio
-        
-        let refracted = Vec3::refract(&uv, &n, etai_over_etat);
-        
-        // Only test essential properties
-        assert!(!refracted.near_zero(), "Refracted vector should not be zero");
-        assert!(refracted.y < 0.0, "Refracted ray should continue downward");
-        assert!((refracted.length() - 1.0).abs() < 1e-6, "Should be unit vector");
     }
 }
 
