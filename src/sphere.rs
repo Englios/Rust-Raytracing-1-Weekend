@@ -69,7 +69,7 @@ mod tests {
     fn test_sphere_new() {
         let center = Point3::new(0.0, 0.0, 0.0);
         let radius = 1.0;
-        let material = Arc::new(Metal::new(Vec3::new(0.8, 0.8, 0.8)));
+        let material = Arc::new(Metal::new(Vec3::new(0.8, 0.8, 0.8),1.0));
         let sphere = Sphere::new(center, radius, material.clone());
 
         assert_eq!(sphere.center, center);
@@ -80,7 +80,7 @@ mod tests {
     fn test_sphere_negative_radius() {
         let center = Point3::new(0.0, 0.0, 0.0);
         let radius = -1.0;
-        let material = Arc::new(Metal::new(Vec3::new(0.8, 0.8, 0.8)));
+        let material = Arc::new(Metal::new(Vec3::new(0.8, 0.8, 0.8),1.0));
         let sphere = Sphere::new(center, radius, material.clone());
 
         assert_eq!(sphere.radius, 0.0);
@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn test_ray_hits_sphere(){
-        let material = Arc::new(Metal::new(Vec3::new(0.8, 0.8, 0.8)));
+        let material = Arc::new(Metal::new(Vec3::new(0.8, 0.8, 0.8),1.0));
         let sphere = Sphere::new(Point3::new(0.0, 0.0, 0.0), 1.0, material.clone());
         let ray = Ray::new(
             Point3::new(0.0, 0.0, -5.0),
@@ -106,7 +106,7 @@ mod tests {
 
     #[test]
     fn test_ray_misses_sphere(){
-        let material = Arc::new(Metal::new(Vec3::new(0.8, 0.8, 0.8)));
+        let material = Arc::new(Metal::new(Vec3::new(0.8, 0.8, 0.8),1.0));
         let sphere = Sphere::new(Point3::new(0.0, 0.0, 0.0), 1.0, material.clone());
         let ray = Ray::new(
             Point3::new(0.0, 0.0, -5.0),
@@ -121,7 +121,7 @@ mod tests {
 
     #[test]
     fn test_ray_hits_sphere_from_inside() {
-        let material = Arc::new(Metal::new(Vec3::new(0.8, 0.8, 0.8)));
+        let material = Arc::new(Metal::new(Vec3::new(0.8, 0.8, 0.8),1.0));
         let sphere = Sphere::new(Point3::new(0.0, 0.0, 0.0), 1.0, material.clone());
         let ray = Ray::new(
             Point3::new(0.0, 0.0, 0.0),
@@ -139,7 +139,7 @@ mod tests {
 
     #[test]
     fn test_ray_hits_sphere_at_t_min() {
-        let material = Arc::new(Metal::new(Vec3::new(0.8, 0.8, 0.8)));
+        let material = Arc::new(Metal::new(Vec3::new(0.8, 0.8, 0.8),1.0));
         let sphere = Sphere::new(Point3::new(0.0, 0.0, 0.0), 1.0, material.clone());
         let ray = Ray::new(
             Point3::new(0.0, 0.0, -5.0),
@@ -157,7 +157,7 @@ mod tests {
 
     #[test]
     fn test_ray_hits_sphere_at_t_max() {
-        let material = Arc::new(Metal::new(Vec3::new(0.8, 0.8, 0.8)));
+        let material = Arc::new(Metal::new(Vec3::new(0.8, 0.8, 0.8),1.0));
         let sphere = Sphere::new(Point3::new(0.0, 0.0, -3.0), 1.0, material.clone());
         let ray = Ray::new(
             Point3::new(0.0, 0.0, -5.0),
