@@ -32,7 +32,9 @@ impl Hittable for Sphere {
         let c = oc.length_squared() - self.radius * self.radius;
 
         let discriminant = h*h - a*c;
-        if discriminant < 0.0 { return false; };
+        if discriminant < 0.0 { 
+            return false; 
+        };
 
         let sqrtd = discriminant.sqrt();
 
