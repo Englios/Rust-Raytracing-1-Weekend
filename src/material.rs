@@ -1,10 +1,7 @@
 use core::arch;
 
 use crate::{
-    color::Color, 
-    hittable::HitRecord, 
-    ray::Ray, 
-    vec3::{Vec3,Point3}
+    color::Color, commons::random_double, hittable::HitRecord, ray::Ray, vec3::{Point3, Vec3}
 };
 
 pub trait Material: Send + Sync {
@@ -94,6 +91,15 @@ impl Dielectric {
             refraction_index
         }
     }
+
+    fn reflectance(cosine:f64 ,refraction_index:f64) -> f64 {
+        // Use Schlicks Approximation
+
+        let mut r0 = (1.0 - refraction_index) / (1.0 + refraction_index);
+        r0 = r0 * r0;
+
+        r0 + ( 1.0 - r0) * (1.0 - cosine).powf(5.0)
+    }
     
 }
 
@@ -104,12 +110,27 @@ impl Material for Dielectric {
                     attenuation: &mut Color,
                     scattered:&mut Ray) -> bool {
         *attenuation = Color::new(1.0, 1.0, 1.0);
-        let ri = if rec.front_face() {1.0/self.refraction_index} else {self.refraction_index};
+        let ri = if rec.front_face() {
+            1.0 / self.refraction_index
+        } else {
+            self.refraction_index
+        };
 
-        let unit_direction  = ray.direction().unit_vector();
-        let refracted = Vec3::refract(&unit_direction, &rec.normal(), ri);
+        let unit_direction  = ray.direction().unit_vector();        
+        let cos_theta = f64::min((-unit_direction).dot(rec.normal()), 1.0);
+        let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
 
-        *scattered = Ray::new(rec.p(), refracted);
+        let cannot_refract = ri * sin_theta > 1.0;
+
+        let direction = if cannot_refract 
+        || (Dielectric::reflectance(cos_theta, ri) > random_double()) 
+        {
+            Vec3::reflect(&unit_direction, &rec.normal())
+        } else {
+            Vec3::refract(&unit_direction, &rec.normal(), ri)
+        };
+        
+        *scattered = Ray::new(rec.p(), direction);
 
         true
     }
