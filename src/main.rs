@@ -11,7 +11,7 @@ mod camera;
 mod interval;
 mod material;
 
-use commons::{INFINITY, PI};
+use commons::INFINITY;
 use hittable::{HitRecord, Hittable};
 use hittable_list::HittableList;
 use material::{Dielectric, Metal,Lambertian};
@@ -37,8 +37,8 @@ fn main() -> io::Result<()>{
     let material_ground = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
     let material_center = Arc::new(Lambertian::new(Color::new(0.1, 0.2, 0.5)));
     let material_left = Arc::new(Dielectric::new(1.50));
-    let matrerial_bubble = Arc::new(Dielectric::new(1.00/1.50));
-    let material_right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2),1.0));
+    let matrerial_bubble = Arc::new(Dielectric::new(1.0/1.50));
+    let material_right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2),0.7));
 
     let spheres: Vec<Box<dyn Hittable>> = vec![
         // Center sphere
@@ -55,12 +55,12 @@ fn main() -> io::Result<()>{
     world.add_objects(spheres);
 
     let aspect_ratio = 16.0/9.0;
-    let image_width = 1080;
+    let image_width = 400;
     let samples_per_pixel = 200;
     let max_depth = 100;
 
-    let vfov = 90.0;
-    let lookfrom = Point3::new(-2.0,2.0,1.0);
+    let vfov = 45.0;
+    let lookfrom = Point3::new(-2.0,1.0,1.0);
     let lookat = Point3::new(0.0, 0.0, -1.0);
     let vup = Vec3::new(0.0, 1.0, 0.0);
     
