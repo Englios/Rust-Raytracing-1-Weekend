@@ -77,6 +77,20 @@ impl Vec3 {
         }
     }
 
+    pub fn random_in_unit_disk() -> Vec3 {
+        loop {
+            let p = Vec3::new(
+                random_double_range(-1.0, 1.0), 
+                random_double_range(-1.0, 1.0), 
+                0.0
+            );
+
+            if p.length_squared() < 1.0 {
+                return p
+            }
+        }
+    }
+
     pub fn near_zero(&self) -> bool {
         let s = 1e-8;
 
@@ -123,13 +137,16 @@ impl Vec3 {
     }
 
     pub fn reflect(v : &Vec3,n: &Vec3) -> Vec3 {
-        *v - (2.0*v.dot(*n)) * *n
+        let n_unit = n.unit_vector();
+        *v - 2.0*v.dot(n_unit) * n_unit
     }
 
-    pub fn refract(uv: &Vec3, n: &Vec3, etai_over_etat: f64) -> Vec3 {
-        let cos_theta = f64::min((-*uv).dot(*n), 1.0);
-        let r_out_perp = etai_over_etat * (*uv + cos_theta * *n);
-        let r_out_parallel = -f64::sqrt(f64::abs(1.0 - r_out_perp.length_squared())) * *n;
+    pub fn refract(v: &Vec3, n: &Vec3, etai_over_etat: f64) -> Vec3 {
+        let uv =  v.unit_vector(); 
+        let cos_theta = f64::min((-uv).dot(*n), 1.0);
+        let r_out_perp = etai_over_etat * (uv + cos_theta * *n);
+        let r_out_parallel = -(1.0 - r_out_perp.length_squared()).abs().sqrt() * *n;
+        
         r_out_perp + r_out_parallel
     }
 
@@ -458,6 +475,23 @@ mod tests {
 
         // Test that reflection preserves length
         assert!((v.length() - reflected.length()).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_refract() {
+        let v = Vec3::new(0.0, -1.0, 0.0).unit_vector();
+        let n = Vec3::new(0.0, 1.0, 0.0);
+        let etai_over_etat = 1.0/1.5;  // air to glass
+        
+        let refracted = Vec3::refract(&v, &n, etai_over_etat);
+        
+        // Test that refraction bends ray as expected
+        assert!(refracted.y().abs() < 1.0); // Should bend toward normal
+        
+        // Test that refraction follows Snell's law
+        let incident_angle = (-v).dot(n).acos();
+        let refracted_angle = refracted.dot(n).acos();
+        assert!((f64::sin(refracted_angle) - etai_over_etat * f64::sin(incident_angle)).abs() < 1e-6);
     }
 }
 
