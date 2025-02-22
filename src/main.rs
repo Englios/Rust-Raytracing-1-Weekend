@@ -23,12 +23,7 @@ use color::{write_color,Color};
 use dotenv::dotenv;
 use std::sync::Arc;
 
-
-fn main() -> io::Result<()>{
-    //Load enviroment variables from .env
-    dotenv().ok();
-
-    // World
+fn toy_env() -> io::Result<()>{
     let mut world = HittableList::new();
 
     // let R = (PI/4.0).cos();
@@ -59,10 +54,13 @@ fn main() -> io::Result<()>{
     let samples_per_pixel = 200;
     let max_depth = 100;
 
-    let vfov = 45.0;
-    let lookfrom = Point3::new(-2.0,1.0,1.0);
+    let vfov = 20.0;
+    let lookfrom = Point3::new(-2.0,3.0,1.0);
     let lookat = Point3::new(0.0, 0.0, -1.0);
     let vup = Vec3::new(0.0, 1.0, 0.0);
+
+    let defocus_angle = 10.0;
+    let focus_dist = 3.4;
     
     let mut cam = Camera::new(
                                         aspect_ratio,
@@ -72,9 +70,117 @@ fn main() -> io::Result<()>{
                                         vfov,
                                         lookfrom,
                                         lookat,
-                                        vup
+                                        vup,
+                                        defocus_angle,
+                                        focus_dist
                                     );
 
     cam.render(&world)?;
+
     Ok(())
+}
+
+fn book_env() -> io::Result<()> {
+    let mut world = HittableList::new();
+
+    // Ground material and sphere
+    let ground_material = Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
+    world.add(Box::new(Sphere::new(
+        Point3::new(0.0, -1000.0, 0.0),
+        1000.0,
+        ground_material,
+    )));
+
+    // Random small spheres
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_mat = commons::random_double();
+            let center = Point3::new(
+                a as f64 + 0.9 * commons::random_double(),
+                0.2,
+                b as f64 + 0.9 * commons::random_double(),
+            );
+
+            if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+                if choose_mat < 0.8 {
+                    // Diffuse
+                    let albedo = Color::random() * Color::random();
+                    let sphere_material = Arc::new(Lambertian::new(albedo));
+                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                } else if choose_mat < 0.95 {
+                    // Metal
+                    let albedo = Color::random_range(0.5, 1.0);
+                    let fuzz = commons::random_double() * 0.5;
+                    let sphere_material = Arc::new(Metal::new(albedo, fuzz));
+                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                } else {
+                    // Glass
+                    let sphere_material = Arc::new(Dielectric::new(1.5));
+                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                }
+            }
+        }
+    }
+
+    // Three large spheres
+    let material1 = Arc::new(Dielectric::new(1.5));
+    world.add(Box::new(Sphere::new(
+        Point3::new(0.0, 1.0, 0.0),
+        1.0,
+        material1,
+    )));
+
+    let material2 = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
+    world.add(Box::new(Sphere::new(
+        Point3::new(-4.0, 1.0, 0.0),
+        1.0,
+        material2,
+    )));
+
+    let material3 = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
+    world.add(Box::new(Sphere::new(
+        Point3::new(4.0, 1.0, 0.0),
+        1.0,
+        material3,
+    )));
+
+    // Camera settings
+    let aspect_ratio = 16.0 / 9.0;
+    let image_width = 1200;
+    let samples_per_pixel = 500;
+    let max_depth = 50;
+
+    let vfov = 20.0;
+    let lookfrom = Point3::new(13.0, 2.0, 3.0);
+    let lookat = Point3::new(0.0, 0.0, 0.0);
+    let vup = Vec3::new(0.0, 1.0, 0.0);
+
+    let defocus_angle = 0.6;
+    let focus_dist = 10.0;
+
+    let mut cam = Camera::new(
+        aspect_ratio,
+        image_width,
+        samples_per_pixel,
+        max_depth,
+        vfov,
+        lookfrom,
+        lookat,
+        vup,
+        defocus_angle,
+        focus_dist,
+    );
+
+    cam.render(&world)?;
+
+    Ok(())
+}
+
+
+
+fn main() -> io::Result<()>{
+    //Load enviroment variables from .env
+    dotenv().ok();
+
+    book_env()
 }
