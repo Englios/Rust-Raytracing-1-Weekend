@@ -21,6 +21,9 @@ pub struct Camera{
     pub lookat: Point3,
     pub vup: Vec3,
 
+    pub defocus_angle:f64,
+    pub focus_dist:f64,
+
     image_height :i32,
     pixel_samples_scale: f64,
     center : Point3,
@@ -29,7 +32,9 @@ pub struct Camera{
     pixel_dv : Vec3,
     u: Vec3,
     v: Vec3,
-    w: Vec3
+    w: Vec3,
+    defocus_disk_u: Vec3,
+    defocus_disk_v: Vec3 
 }
 
 
@@ -44,6 +49,8 @@ impl Default for Camera {
             lookfrom: Point3::new(0.0, 0.0, 0.0),
             lookat: Point3::new(0.0, 0.0, 0.0),
             vup: Vec3::new(0.0, 1.0, 0.0),
+            defocus_angle:0.0,
+            focus_dist:10.0,
             image_height: 100,
             pixel_samples_scale: 1.0,
             center: Point3::new(0.0, 0.0, 0.0),
@@ -53,12 +60,24 @@ impl Default for Camera {
             u: Vec3::default(),
             v: Vec3::default(),
             w: Vec3::default(),
+            defocus_disk_u: Vec3::default(),
+            defocus_disk_v: Vec3::default()
         }
     }
 }
 
 impl Camera {
-    pub fn new(aspect_ratio:f64,image_width:i32,samples_per_pixel:i32,max_depth:i32,vfov:f64,lookfrom:Point3,lookat:Point3,vup:Vec3) -> Self {
+    pub fn new(
+        aspect_ratio:f64,
+        image_width:i32,
+        samples_per_pixel:i32,
+        max_depth:i32,vfov:f64,
+        lookfrom:Point3,
+        lookat:Point3,
+        vup:Vec3,
+        defocus_angle:f64,
+        focus_dist:f64
+    ) -> Self {
         Self {
             aspect_ratio,
             image_width,
@@ -68,6 +87,8 @@ impl Camera {
             lookfrom,
             lookat,
             vup,
+            defocus_angle,
+            focus_dist,
             image_height: 0, // Calculated based on aspect_ratio
             pixel_samples_scale:0.0,
             center: Point3::new(0.0, 0.0, 0.0),
@@ -77,6 +98,8 @@ impl Camera {
             u: Vec3::new(0.0, 0.0, 0.0),
             v: Vec3::new(0.0, 0.0, 0.0),
             w: Vec3::new(0.0, 0.0, 0.0),
+            defocus_disk_u: Vec3::new(0.0, 0.0, 0.0),
+            defocus_disk_v: Vec3::new(0.0, 0.0, 0.0),
         }
         
     }
@@ -89,11 +112,9 @@ impl Camera {
         self.center = self.lookfrom;
     
         // View Port Dimensions
-        let focal_length = (self.lookfrom - self.lookat).length();  
-
         let theta = degrees_to_radians(self.vfov);
         let h = (theta/2.0).tan();
-        let viewport_height = 2.0 * h * focal_length;
+        let viewport_height = 2.0 * h * self.focus_dist;
         let viewport_width = viewport_height * ((self.image_width as f64) / (self.image_height as f64));
 
         // Basis Vectors for Camera
@@ -107,8 +128,12 @@ impl Camera {
         self.pixel_du = viewport_u / self.image_width as f64;
         self.pixel_dv = viewport_v / self.image_height as f64;
     
-        let viewport_upper_left = self.center - (focal_length * w) - viewport_u/2.0 - viewport_v/2.0;
+        let viewport_upper_left = self.center - (self.focus_dist * w) - viewport_u/2.0 - viewport_v/2.0;
         self.pixel00_loc = viewport_upper_left + 0.5 * (self.pixel_du + self.pixel_dv);
+
+        let defocus_radius = self.focus_dist * degrees_to_radians(self.defocus_angle / 2.0).tan();
+        self.defocus_disk_u = u * defocus_radius;
+        self.defocus_disk_v = v * defocus_radius;
     }
 
     fn ray_color(r: &Ray,depth:i32 ,world: &dyn Hittable) -> Color{
@@ -147,12 +172,25 @@ impl Camera {
         }
     }
 
+    fn defocus_disk_sample(&self) -> Vec3 {
+        let p = Vec3::random_in_unit_disk();
+
+        self.center + (p.x() * self.defocus_disk_u) + (p.y() * self.defocus_disk_v)
+    }
+
+
     fn get_ray(&self, i: i32, j: i32) -> Ray {
-        let pixel_center = self.pixel00_loc 
-            + (i as f64 * self.pixel_du)
-            + (j as f64 * self.pixel_dv);
-        let pixel_sample = pixel_center + self.pixel_sample_square();
-        let ray_origin = self.center;
+        let offset = Camera::sample_square();
+        let pixel_sample = self.pixel00_loc 
+                                + ((i as f64 + offset.x()) * self.pixel_du)
+                                + ((j as f64 + offset.y()) * self.pixel_dv);
+
+        let ray_origin = if self.defocus_angle <= 0.0 {
+            self.center
+        } else {
+            self.defocus_disk_sample()
+        };
+
         let ray_direction = pixel_sample - ray_origin;
         
         Ray::new(ray_origin, ray_direction)
@@ -174,15 +212,10 @@ impl Camera {
         
         writeln!(writer, "P3\n{} {}\n255", self.image_width, self.image_height)?;
 
-        // Cannot use self reference in Parallel Iteration,thus we must define them here first
         let samples = self.samples_per_pixel;
         let max_depth = self.max_depth;
         let scale = self.pixel_samples_scale;
         let image_width = self.image_width;
-        let pixel00_loc = self.pixel00_loc;
-        let pixel_du = self.pixel_du;
-        let pixel_dv = self.pixel_dv;
-        let center = self.center;
 
         // Add progress bar
         let progress = std::sync::Arc::new(ProgressBar::new((self.image_height * self.image_width) as u64));
@@ -194,6 +227,7 @@ impl Camera {
 
         //Proggrs bar must be clone first to reference within parallel iterations
         let progress_ref = Arc::clone(&progress);
+        let camera = &self;
 
         //Store all pixels data in a List
         let pixels: Vec<Color> = (0..self.image_height)
@@ -203,10 +237,7 @@ impl Camera {
                 (0..image_width).into_par_iter().map(move |i| {
                     let mut pixel_color = Color::new(0.0, 0.0, 0.0);
                     for _ in 0..samples {
-                        let pixel_center = pixel00_loc + (i as f64 * pixel_du) + (j as f64 * pixel_dv);
-                        let pixel_sample = pixel_center + ((random_double() - 0.5) * pixel_du + (random_double() - 0.5) * pixel_dv);
-                        let ray_direction = pixel_sample - center;
-                        let r = Ray::new(center, ray_direction);
+                        let r = camera.get_ray(i, j);
                         pixel_color += Camera::ray_color(&r, max_depth, world);
                     }
                     progress.inc(1);
@@ -247,7 +278,9 @@ mod tests {
             90.0,
             Point3::new(0.0, 0.0, -1.0),
             Point3::new(0.0, 0.0, 0.0),
-            Vec3::new(0.0, 1.0, 0.0)
+            Vec3::new(0.0, 1.0, 0.0),
+            0.0,  // defocus_angle
+            10.0  // focus_dist
         );
         assert_eq!(camera.aspect_ratio, 2.0);
         assert_eq!(camera.image_width, 200);
@@ -265,7 +298,9 @@ mod tests {
             90.0,
             Point3::new(0.0, 0.0, -1.0),
             Point3::new(0.0, 0.0, 0.0),
-            Vec3::new(0.0, 1.0, 0.0)
+            Vec3::new(0.0, 1.0, 0.0),
+            0.0,  // defocus_angle
+            10.0  // focus_dist
         );
         camera.initialize();
         assert_eq!(camera.image_height, 100); // 200/2.0 = 100
