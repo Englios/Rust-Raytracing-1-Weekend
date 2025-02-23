@@ -14,7 +14,7 @@ pub struct HitRecord {
     pub front_face:bool
 }
 
-pub trait Hittable:Sync {
+pub trait Hittable:Send + Sync {
     fn hit(&self,r: &Ray,t: &Interval,rec: &mut HitRecord) ->bool;
 }
 

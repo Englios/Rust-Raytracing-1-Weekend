@@ -54,13 +54,13 @@ fn toy_env() -> io::Result<()>{
     let samples_per_pixel = 200;
     let max_depth = 100;
 
-    let vfov = 20.0;
-    let lookfrom = Point3::new(-2.0,3.0,1.0);
+    let vfov = 45.0;
+    let lookfrom = Point3::new(0.0,0.0,1.0);
     let lookat = Point3::new(0.0, 0.0, -1.0);
     let vup = Vec3::new(0.0, 1.0, 0.0);
 
-    let defocus_angle = 10.0;
-    let focus_dist = 3.4;
+    let defocus_angle = 0.0;
+    let focus_dist = 1.0;
     
     let mut cam = Camera::new(
                                         aspect_ratio,
@@ -182,5 +182,6 @@ fn main() -> io::Result<()>{
     //Load enviroment variables from .env
     dotenv().ok();
 
-    book_env()
+    // book_env()
+    toy_env()
 }

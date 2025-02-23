@@ -57,25 +57,16 @@ impl Vec3 {
 
     pub fn cross(&self,other:Vec3) ->  Self{
         Self{
-            x: self.y*other.z - self.z*other.y,
+            x: self.y*other.z - self.z * other.y,
             y: self.z*other.x - self.x * other.z,
             z: self.x*other.y - self.y * other.x
         }
     }
 
     pub fn unit_vector(self) -> Self {
-        let len = self.length();
-        if len == 0.0 {
-            self
-        } else {
-            // Handle negative zero by using abs() for very small values
-            Self {
-                x: if self.x.abs() < 1e-8 { 0.0 } else { self.x / len },
-                y: if self.y.abs() < 1e-8 { 0.0 } else { self.y / len },
-                z: if self.z.abs() < 1e-8 { 0.0 } else { self.z / len },
-            }
-        }
+        self / self.length()
     }
+
 
     pub fn random_in_unit_disk() -> Vec3 {
         loop {
@@ -145,7 +136,7 @@ impl Vec3 {
         let uv =  v.unit_vector(); 
         let cos_theta = f64::min((-uv).dot(*n), 1.0);
         let r_out_perp = etai_over_etat * (uv + cos_theta * *n);
-        let r_out_parallel = -(1.0 - r_out_perp.length_squared()).abs().sqrt() * *n;
+        let r_out_parallel = -((1.0 - r_out_perp.length_squared()).abs()).sqrt() * *n;
         
         r_out_perp + r_out_parallel
     }
