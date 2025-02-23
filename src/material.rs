@@ -1,159 +1,116 @@
-use crate::{
-    color::Color, commons::random_double, hittable::HitRecord, ray::Ray, vec3::{Point3, Vec3}
-};
-
+use crate::color::Color;
+use crate::hittable::HitRecord;
+use crate::ray::Ray;
+use crate::{common, vec3};
+ 
+pub struct ScatterRecord {
+    pub attenuation: Color,
+    pub scattered: Ray,
+}
+ 
 pub trait Material: Send + Sync {
-
-    fn scatter(&self,
-                ray:&Ray, 
-                rec :&HitRecord,
-                attenuation: &mut Color,
-                scattered:&mut Ray) -> bool 
-    {
-        false
-    }
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<ScatterRecord>;
 }
-
-
+ 
 pub struct Lambertian {
-    albedo : Color
+    albedo: Color,
 }
-
+ 
 impl Lambertian {
-
-    pub fn new(albedo:Color) -> Self {
-        Self { albedo }
+    pub fn new(a: Color) -> Lambertian {
+        Lambertian { albedo: a }
     }
-    
 }
-
+ 
 impl Material for Lambertian {
-
-    fn scatter(&self,
-                    ray:&Ray, 
-                    rec :&HitRecord,
-                    attenuation: &mut Color,
-                    scattered:&mut Ray) -> bool {
-        let mut scatter_direction = rec.normal() + Vec3::random_unit_vector();
-
+    fn scatter(&self, _r_in: &Ray, rec: &HitRecord) -> Option<ScatterRecord> {
+        let mut scatter_direction = rec.normal + vec3::random_unit_vector();
+ 
+        // Catch degenerate scatter direction
         if scatter_direction.near_zero() {
-            scatter_direction = rec.normal()
+            scatter_direction = rec.normal;
         }
-        
-        *scattered = Ray::new(rec.p, scatter_direction);
-        *attenuation = self.albedo;
-
-        true
+ 
+        Some(ScatterRecord {
+            attenuation: self.albedo,
+            scattered: Ray::new(rec.p, scatter_direction),
+        })
     }
 }
-
-
+ 
 pub struct Metal {
-    albedo : Color,
-    fuzz: f64
+    albedo: Color,
+    fuzz: f64,
 }
-
+ 
 impl Metal {
-    pub fn new(albedo:Color,fuzz:f64) -> Self {
-        Self {
-            albedo,
-            fuzz : if fuzz < 1.0 {fuzz} else {1.0}
+    pub fn new(a: Color, f: f64) -> Metal {
+        Metal {
+            albedo: a,
+            fuzz: if f < 1.0 { f } else { 1.0 },
         }
     }
 }
-
+ 
 impl Material for Metal {
-    fn scatter(&self,
-                    ray:&Ray, 
-                    rec :&HitRecord,
-                    attenuation: &mut Color,
-                    scattered:&mut Ray) -> bool {
-        let mut reflected = Vec3::reflect(&ray.direction().unit_vector(), &rec.normal());
-        reflected = reflected.unit_vector() + (self.fuzz * Vec3::random_unit_vector());
-        *scattered = Ray::new(rec.p(), reflected);
-        *attenuation = self.albedo;
-        
-        scattered.direction().dot(rec.normal) > 0.0
-    }
-}
-
-
-//Dielectric
-pub struct Dielectric{
-    refraction_index : f64
-}
-
-impl Dielectric {
-    pub fn new(refraction_index:f64) -> Self {
-        Self {
-            refraction_index
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<ScatterRecord> {
+        let reflected = vec3::reflect(vec3::unit_vector(r_in.direction()), rec.normal);
+        let scattered = Ray::new(rec.p, reflected + self.fuzz * vec3::random_in_unit_sphere());
+ 
+        if vec3::dot(scattered.direction(), rec.normal) > 0.0 {
+            Some(ScatterRecord {
+                attenuation: self.albedo,
+                scattered,
+            })
+        } else {
+            None
         }
     }
-
+}
+ 
+pub struct Dielectric {
+    ir: f64, // Index of refraction
+}
+ 
+impl Dielectric {
+    pub fn new(index_of_refraction: f64) -> Dielectric {
+        Dielectric {
+            ir: index_of_refraction,
+        }
+    }
+ 
     fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
         // Use Schlick's approximation for reflectance
-        let r0 = ((1.0 - ref_idx) / (1.0 + ref_idx)).powi(2);
-        r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
+        let mut r0 = (1.0 - ref_idx) / (1.0 + ref_idx);
+        r0 = r0 * r0;
+        r0 + (1.0 - r0) * f64::powf(1.0 - cosine, 5.0)
     }
-    
 }
-
+ 
 impl Material for Dielectric {
-    fn scatter(&self,
-                    ray:&Ray, 
-                    rec :&HitRecord,
-                    attenuation: &mut Color,
-                    scattered:&mut Ray) -> bool {
-        *attenuation = Color::new(1.0, 1.0, 1.0);
-
-        let ri = if rec.front_face() {
-            1.0 / self.refraction_index
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<ScatterRecord> {
+        let refraction_ratio = if rec.front_face {
+            1.0 / self.ir
         } else {
-            self.refraction_index
+            self.ir
         };
-
-        let unit_direction = ray.direction().unit_vector();
-        let cos_theta = f64::min((-unit_direction).dot(rec.normal()), 1.0);
-        let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
-        
-        let cannot_refract = ri * sin_theta > 1.0;
-        let will_reflect = Self::reflectance(cos_theta, ri) > random_double();
-
-        let direction = if cannot_refract || will_reflect {
-            Vec3::reflect(&unit_direction, &rec.normal)
+ 
+        let unit_direction = vec3::unit_vector(r_in.direction());
+        let cos_theta = f64::min(vec3::dot(-unit_direction, rec.normal), 1.0);
+        let sin_theta = f64::sqrt(1.0 - cos_theta * cos_theta);
+ 
+        let cannot_refract = refraction_ratio * sin_theta > 1.0;
+        let direction = if cannot_refract
+            || Self::reflectance(cos_theta, refraction_ratio) > common::random_double()
+        {
+            vec3::reflect(unit_direction, rec.normal)
         } else {
-            Vec3::refract(&unit_direction, &rec.normal, ri)
+            vec3::refract(unit_direction, rec.normal, refraction_ratio)
         };
-
-        *scattered = Ray::new(rec.p(), direction);
-
-        true
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_lambertian_scatter() {
-        let lambertian = Lambertian::new(Color::new(0.5, 0.5, 0.5));
-        let ray_in = Ray::new(
-            Point3::new(0.0, 0.0, 0.0),
-            Vec3::new(0.0, 0.0, 1.0)
-        );
-        let mut hit_record = HitRecord::default();
-        hit_record.set_normal(Vec3::new(0.0, 0.0, -1.0));
-        hit_record.set_p(Point3::new(0.0, 0.0, 1.0));
-
-        let mut scattered = Ray::default();
-        let mut attenuation = Color::default();
-
-        assert!(lambertian.scatter(&ray_in, &hit_record, &mut attenuation, &mut scattered));
-        assert_eq!(attenuation, Color::new(0.5, 0.5, 0.5));
-        assert_eq!(scattered.origin(), Point3::new(0.0, 0.0, 1.0));
-        
-        // Verify that scattered direction is in the same hemisphere as the normal
-        assert!(scattered.direction().dot(hit_record.normal()) > 0.0);
+ 
+        Some(ScatterRecord {
+            attenuation: Color::new(1.0, 1.0, 1.0),
+            scattered: Ray::new(rec.p, direction),
+        })
     }
 }

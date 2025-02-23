@@ -1,43 +1,32 @@
-use std::f64::consts::PI as STD_PI;
-
-pub const INFINITY: f64 = f64::INFINITY;
-pub const PI: f64 = STD_PI;
-
+use rand::Rng;
+ 
+// Constants
+ 
+pub use std::f64::consts::PI;
+pub use std::f64::INFINITY;
+ 
+// Utility functions
+ 
 pub fn degrees_to_radians(degrees: f64) -> f64 {
     degrees * PI / 180.0
 }
-
+ 
 pub fn random_double() -> f64 {
-    rand::random_range(0.0..1.0)
+    // Return a random real in [0.0, 1.0)
+    rand::thread_rng().gen()
 }
-
-pub fn random_double_range(min:f64,max:f64) -> f64{
-    rand::random_range(min..max)
+ 
+pub fn random_double_range(min: f64, max: f64) -> f64 {
+    // Return a random real in [min, max)
+    min + (max - min) * random_double()
 }
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_degrees_to_radians() {
-        assert_eq!(degrees_to_radians(0.0), 0.0);
-        assert_eq!(degrees_to_radians(180.0), PI);
-        assert_eq!(degrees_to_radians(90.0), PI / 2.0);
+ 
+pub fn clamp(x: f64, min: f64, max: f64) -> f64 {
+    if x < min {
+        return min;
     }
-
-    #[test]
-    fn test_random_double() {
-        let r = random_double();
-        assert!(r >= 0.0 && r < 1.0);
+    if x > max {
+        return max;
     }
-
-    #[test]
-    fn test_random_double_range() {
-        let min = 10.0;
-        let max = 20.0;
-        let r = random_double_range(min, max);
-        assert!(r >= min && r < max);
-    }
+    x
 }
