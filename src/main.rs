@@ -5,10 +5,12 @@ use std::io::BufWriter;
 use indicatif::ProgressBar;
 use std::sync::Arc;
 use std::io::Write;
+use crate::color::Color;
 
 
 // Imports from files
 mod vec3;
+mod color;
 
 fn main() -> std::io::Result<()> {
     dotenv().ok();
@@ -48,18 +50,20 @@ fn main() -> std::io::Result<()> {
         .flat_map(move |j| {
             let progress = progress.clone(); // Clone progress bar for thread
             (0..image_width).into_par_iter().map(move |i| {
-                let r = i as f64 / (image_width-1) as f64;
-                let g = j as f64/ (image_width-1) as f64;
-                let b = 0.25;
 
-                let ir = (255.999 * r) as i32;
-                let ig = (255.999 * g) as i32;
-                let ib = (255.999 * b) as i32;  
+                // Calculate pixel color
+                let pixel_color = Color::new(
+                    i as f64 / (image_width - 1) as f64,
+                    j as f64 / (image_height - 1) as f64,
+                    0.5,
+                );
 
                 // Increment progress bar
                 progress.inc(1);
 
-                (ir,ig,ib)
+                // Write pixel color to file
+                let (r, g, b) = color::write_color(&pixel_color);
+                (r, g, b)
             })
         })
         .collect();
