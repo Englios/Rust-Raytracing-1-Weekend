@@ -507,9 +507,10 @@ mod tests {
     fn test_vec3_unit_vector() {
         let vec = Vec3::new(1.0, 2.0, 3.0);
         let unit_vector = vec.unit_vector();
-        assert_eq!(unit_vector.x(), (1.0/14.0_f64).sqrt());
-        assert_eq!(unit_vector.y(), (2.0/14.0_f64).sqrt());
-        assert_eq!(unit_vector.z(), (3.0/14.0_f64).sqrt());
+        let length = vec.length();
+        assert_eq!(unit_vector.x(), 1.0/length);
+        assert_eq!(unit_vector.y(), 2.0/length);
+        assert_eq!(unit_vector.z(), 3.0/length);
     }
 
     #[test]
