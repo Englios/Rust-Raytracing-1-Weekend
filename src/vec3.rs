@@ -2,6 +2,7 @@ use std::ops::{
     Add, AddAssign, Div, Mul, MulAssign, Neg, DivAssign, Sub, SubAssign
 };
 
+#[derive(Debug, Clone, Copy,PartialEq)]
 pub struct Vec3 {
     e : [f64; 3] 
 }
@@ -284,6 +285,54 @@ impl Sub<Vec3> for f64 {
             self - other.x(), 
             self - other.y(), 
             self - other.z()
+        )
+    }
+}
+
+impl Sub<f64> for &Vec3 {
+    type Output = Vec3;
+
+    fn sub(self, other: f64) -> Self::Output {
+        Vec3::new(
+            self.x() - other,
+            self.y() - other,
+            self.z() - other
+        )
+    }
+}
+
+impl Sub<Vec3> for &Vec3 {
+    type Output = Vec3;
+
+    fn sub(self, other: Vec3) -> Self::Output {
+        Vec3::new(
+            self.x() - other.x(),
+            self.y() - other.y(),
+            self.z() - other.z()
+        )
+    }
+}
+
+impl Sub<&Vec3> for f64 {
+    type Output = Vec3;
+
+    fn sub(self, other: &Vec3) -> Self::Output {
+        Vec3::new(
+            self - other.x(),
+            self - other.y(),
+            self - other.z()
+        )
+    }
+}
+
+impl Sub<&Vec3> for Vec3 {
+    type Output = Vec3;
+
+    fn sub(self, other: &Vec3) -> Self::Output {
+        Vec3::new(
+            self.x() - other.x(),
+            self.y() - other.y(),
+            self.z() - other.z()
         )
     }
 }
