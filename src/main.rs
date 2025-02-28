@@ -15,6 +15,7 @@ use crate::ray::Ray;
 mod vec3;
 mod color;
 mod ray;
+mod hittable;
 
 fn main() -> std::io::Result<()> {
     dotenv().ok();
