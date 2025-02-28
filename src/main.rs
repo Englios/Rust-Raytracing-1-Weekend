@@ -107,12 +107,17 @@ fn main() -> std::io::Result<()> {
 
 
 fn ray_color(r: &Ray) -> Color {
-    if hit_sphere(
+
+    
+    let t = hit_sphere(
         &Point3::new(0.0, 0.0, -1.0), 
         0.5, 
         r
-    ) {
-        return Color::new(1.0, 0.0, 0.0);
+    ); 
+    
+    if t > 0.0 {
+        let n = (r.at(t) - Vec3::new(0.0, 0.0, -1.0)).unit_vector();
+        return 0.5 * Color::new(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0);
     }
 
     let unit_direction = r.direction().unit_vector();
@@ -121,13 +126,18 @@ fn ray_color(r: &Ray) -> Color {
     (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
 }
 
-fn hit_sphere(center: &Point3, radius: f64, r: &Ray) -> bool {
-    let oc = r.origin() - center;
-    let a = r.direction().dot(r.direction());
-    let b = -2.0 * r.direction().dot(oc);
-    let c = oc.dot(oc) - radius * radius;
-    let discriminant = b * b - 4.0 * a * c;
+fn hit_sphere(center: &Point3, radius: f64, r: &Ray) -> f64 {
+    let oc = center - r.origin();
     
-    discriminant >= 0.0
+    let a = r.direction().length_squared();
+    let half_b = r.direction().dot(oc);
+    let c = oc.length_squared() - radius * radius;
+    let discriminant = half_b * half_b - a * c;
+
+    if discriminant < 0.0 {
+        return -1.0;
+    } else {
+        return (half_b - discriminant.sqrt()) / a;
+    }
 }
 
