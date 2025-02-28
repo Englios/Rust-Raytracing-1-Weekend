@@ -2,14 +2,14 @@ use crate::vec3::{Point3, Vec3};
 use crate::ray::Ray;
 
 #[derive(Clone)]
-struct HitRecord {
+pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
     pub t: f64,
 }
 
 pub trait Hittable : Send + Sync {
-    fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord>;
+    fn hit(&self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool;
 }
 
 impl Default for HitRecord {
@@ -65,7 +65,7 @@ mod tests {
         let normal = Vec3::new(4.0, 5.0, 6.0);
         let t = 7.0;
         let hit_record = HitRecord::new(p, normal, t);
-        
+
         assert_eq!(hit_record.p(), p);
         assert_eq!(hit_record.normal(), normal);
         assert_eq!(hit_record.t(), t);
