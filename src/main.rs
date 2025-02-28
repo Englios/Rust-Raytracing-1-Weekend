@@ -16,7 +16,7 @@ mod vec3;
 mod color;
 mod ray;
 mod hittable;
-
+mod sphere;
 fn main() -> std::io::Result<()> {
     dotenv().ok();
 
