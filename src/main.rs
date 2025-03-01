@@ -17,16 +17,26 @@ use std::io::BufWriter;
 use camera::Camera;
 use std::sync::Arc;
 use commons::ray::Ray;
-
+use material::Lambertian;
+use material::Metal;
+use commons::color::Color;
 
 fn main() -> std::io::Result<()> {
     dotenv().ok();
 
+    let material_ground = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
+    let material_center = Arc::new(Lambertian::new(Color::new(0.1, 0.2, 0.5)));
+    let material_left = Arc::new(Metal::new(Color::new(0.8, 0.8, 0.8),0.3));
+    let material_right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2),1.0));
+
+    // World
     //World
     let mut world = HittableList::new();
     let world_list: Vec<Arc<dyn Hittable>> = vec![
-        Arc::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5,None)),
-        Arc::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.00,None)),
+        Arc::new(Sphere::new(Point3::new(0.0, 0.0, -1.2), 0.5, Some(material_center))),
+        Arc::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.00, Some(material_ground))),
+        Arc::new(Sphere::new(Point3::new(-1.0, 0.0, -1.0), 0.5, Some(material_left))),
+        Arc::new(Sphere::new(Point3::new(1.0, 0.0, -1.0), 0.5, Some(material_right))),
     ];
 
     world.add_multiple(world_list);
