@@ -4,9 +4,13 @@ use crate::interval::Interval;
 pub type Color = Vec3;
 
 pub fn write_color(pixel_color: &Color) -> (i32, i32, i32) {
-    let r = pixel_color.x() as f64;
-    let g = pixel_color.y() as f64;
-    let b = pixel_color.z() as f64;
+    let mut r = pixel_color.x() as f64;
+    let mut g = pixel_color.y() as f64;
+    let mut b = pixel_color.z() as f64;
+
+    r = linear_to_gamma(r);
+    g = linear_to_gamma(g);
+    b = linear_to_gamma(b);
 
     let intensity = Interval::new(0.0, 0.999);
 
@@ -16,3 +20,13 @@ pub fn write_color(pixel_color: &Color) -> (i32, i32, i32) {
 
     (r_byte, g_byte, b_byte)
 }
+
+fn linear_to_gamma(linear_component: f64) -> f64 {
+    // Gamma correction
+    if linear_component > 0.0 {
+        linear_component.sqrt()
+    } else {
+        0.0
+    }
+}
+
