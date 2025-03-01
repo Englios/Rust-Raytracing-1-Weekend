@@ -3,10 +3,15 @@ mod hittable;
 mod sphere;
 mod hittable_list;
 mod commons;
+mod interval;
 
+use commons::INFINITY;
 use dotenv::dotenv;
+use hittable_list::HittableList;
+use hittable::{HitRecord, Hittable};
 use rayon::prelude::*;
 use commons::vec3::{Point3,Vec3};
+use sphere::Sphere;
 use std::fs::File;
 use std::io::BufWriter;
 use indicatif::ProgressBar;
@@ -18,6 +23,15 @@ use commons::ray::Ray;
 
 fn main() -> std::io::Result<()> {
     dotenv().ok();
+
+    //World
+    let mut world = HittableList::new();
+    let world_list: Vec<Arc<dyn Hittable>> = vec![
+        Arc::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)),
+        Arc::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.00)),
+    ];
+
+    world.add_multiple(world_list);
 
     //Camera
     let aspect_ratio = 16.0 / 9.0;
@@ -72,6 +86,7 @@ fn main() -> std::io::Result<()> {
         .into_par_iter() // Parallel iterator
         .flat_map(move |j| {
             let progress = progress.clone(); // Clone progress bar for thread
+            let world = world.clone(); // Clone world for thread
             (0..image_width).into_par_iter().map(move |i| {
                 // Calculate pixel color
                 let pixel_center = pixel00_loc
@@ -79,7 +94,7 @@ fn main() -> std::io::Result<()> {
                                     + j as f64 * pixel_dv;
                 let ray_direction = pixel_center - camera_center;
                 let r = Ray::new(camera_center, ray_direction);
-                let pixel_color = ray_color(&r);
+                let pixel_color = ray_color(&r, &world);
 
 
                 // Increment progress bar
@@ -106,18 +121,11 @@ fn main() -> std::io::Result<()> {
 }
 
 
-fn ray_color(r: &Ray) -> Color {
-
+fn ray_color(r: &Ray, world: &dyn Hittable) -> Color {
+    let mut rec = HitRecord::default();
     
-    let t = hit_sphere(
-        &Point3::new(0.0, 0.0, -1.0), 
-        0.5, 
-        r
-    ); 
-    
-    if t > 0.0 {
-        let n = (r.at(t) - Vec3::new(0.0, 0.0, -1.0)).unit_vector();
-        return 0.5 * Color::new(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0);
+    if world.hit(r, 0.0, INFINITY, &mut rec) {
+        return 0.5 * (rec.normal() + Color::new(1.0, 1.0, 1.0));
     }
 
     let unit_direction = r.direction().unit_vector();
