@@ -88,6 +88,15 @@ impl Vec3 {
             random_double_range(min, max), 
             random_double_range(min, max))
     }
+
+    pub fn near_zero(&self) -> bool {
+        let s = 1e-8;
+        self.x().abs() < s && self.y().abs() < s && self.z().abs() < s
+    }
+
+    pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
+        v - 2.0 * v.dot(n) * n
+    }
 }
 
 
