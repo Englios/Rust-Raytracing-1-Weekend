@@ -4,21 +4,24 @@ use crate::commons::color::Color;
 use crate::hittable::{Hittable,HitRecord};
 use crate::interval::Interval;
 use crate::commons::INFINITY;
+use crate::commons::random_double;
 use indicatif::ProgressBar;
 use crate::commons::color::write_color;
 use rayon::prelude::*;
 use std::sync::Arc;
 
+#[derive(Clone)]
 pub struct Camera {
     pub aspect_ratio:f64,
     pub image_width:i32,
+    pub samples_per_pixel:i32,
 
+    pixel_samples_scale:f64,
     image_height:i32,
     center: Point3,
     pixel00_loc: Point3,
     pixel_du : Vec3,
     pixel_dv : Vec3
-
 }
 
 impl Default for Camera {
@@ -32,7 +35,9 @@ impl Camera {
         Self {
             aspect_ratio: 16.0 / 9.0,
             image_width: 400,
+            samples_per_pixel: 10,
             image_height: 0,
+            pixel_samples_scale: 0.0,
             center: Point3::new(0.0, 0.0, 0.0),
             pixel00_loc: Point3::new(0.0, 0.0, 0.0),
             pixel_du: Vec3::new(0.0, 0.0, 0.0),
@@ -61,23 +66,22 @@ impl Camera {
 
         //Parallel Processing of pixels
         let pixels:Vec<(i32,i32,i32)> = (0..self.image_height)
-            .into_par_iter() // Parallel iterator
+            .into_par_iter()
             .flat_map(move |j| {
                 let progress = progress.clone(); // Clone progress bar for thread
-                let pixel00_loc = self.pixel00_loc;
-                let pixel_du = self.pixel_du;
-                let pixel_dv = self.pixel_dv;
-                let center = self.center;
+                let camera = self.clone();
                 let image_width = self.image_width;
-
+                let samples_per_pixel = self.samples_per_pixel;
+                
                 (0..image_width).into_par_iter().map(move |i| {
-                    // Calculate pixel color
-                    let pixel_center = pixel00_loc
-                                        + (i as f64) * pixel_du
-                                        + (j as f64) * pixel_dv;
-                    let ray_direction = pixel_center - center;
-                    let r = Ray::new(center, ray_direction);
-                    let pixel_color = Self::ray_color(&r, world);
+                    let mut pixel_color = Color::new(0.0, 0.0, 0.0);
+
+                    for _ in 0..samples_per_pixel {
+                        let r = camera.get_ray(i as f64, j as f64);
+                        pixel_color += Self::ray_color(&r, world);
+                    }
+
+                    pixel_color /= samples_per_pixel as f64;
 
                     // Increment progress bar
                     progress.inc(1);
@@ -107,6 +111,7 @@ impl Camera {
     fn initialize(&mut self) {
         self.image_height = (self.image_width as f64 / self.aspect_ratio) as i32;
         self.image_height = if self.image_height < 1 { 1 } else {self.image_height };
+        self.pixel_samples_scale = 1.0 / self.samples_per_pixel as f64;
 
         self.center = Point3::new(0.0, 0.0, 0.0);
         
@@ -144,5 +149,26 @@ impl Camera {
         let a = 0.5 * (unit_direction.y() + 1.0);
 
         (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
-    }   
+    }  
+
+    fn get_ray(&self, i: f64, j: f64) -> Ray {
+        let offset = Camera::sample_square();
+
+        let pixel_sample = self.pixel00_loc
+                                + (i + offset.x()) * self.pixel_du
+                                + (j + offset.y()) * self.pixel_dv;
+
+        let ray_origin = self.center;
+        let ray_direction = pixel_sample - ray_origin;
+
+        Ray::new(ray_origin, ray_direction)
+    }
+
+    fn sample_square() -> Vec3 {
+        Vec3::new(
+            -0.5 + random_double(),
+            -0.5 + random_double(),
+            0.0
+        )
+    } 
 }
