@@ -34,6 +34,7 @@ fn main() -> std::io::Result<()> {
     let mut camera = Camera::new();
     camera.aspect_ratio = 16.0 / 9.0;
     camera.image_width = 400;
+    camera.samples_per_pixel = 100;
     
     // Output file path
     let image_output_path = std::env::var("IMAGE_OUTPUT")
