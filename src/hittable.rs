@@ -1,13 +1,16 @@
 use crate::commons::vec3::{Point3, Vec3};
 use crate::commons::ray::Ray;
 use crate::interval::Interval;
+use crate::material::Material;
+use std::sync::Arc;
 
-#[derive(Clone,Copy)]
+#[derive(Clone)]
 pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
     pub t: f64,
     pub front_face: bool,
+    pub material: Option<Arc<dyn Material>>,
 }
 
 pub trait Hittable : Send + Sync {
@@ -16,13 +19,25 @@ pub trait Hittable : Send + Sync {
 
 impl Default for HitRecord {
     fn default() -> Self {
-        Self { p: Point3::default(), normal: Vec3::default(), t: 0.0 ,front_face:false}
+        Self { 
+            p: Point3::default(), 
+            normal: Vec3::default(), 
+            t: 0.0,
+            front_face: false,
+            material: None,
+        }
     }
 }
 
 impl HitRecord {
     pub fn new(p: Point3, normal: Vec3, t: f64, front_face: bool) -> Self {
-        Self { p, normal, t ,front_face}
+        Self { 
+            p, 
+            normal, 
+            t, 
+            front_face,
+            material: None,
+        }
     }
 
     // Getters
