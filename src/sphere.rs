@@ -1,6 +1,7 @@
 use crate::commons::vec3::{Point3, Vec3};
 use crate::commons::ray::Ray;
 use crate::hittable::{Hittable, HitRecord};
+use crate::interval::Interval;
 
 
 pub struct Sphere {
@@ -24,8 +25,7 @@ impl Hittable for Sphere {
     fn hit(
         &self,
         r: &Ray,
-        t_min: f64,
-        t_max: f64,
+        ray_t: Interval,
         rec: &mut HitRecord,
     ) -> bool {
         let oc = self.center - r.origin();
@@ -42,9 +42,9 @@ impl Hittable for Sphere {
 
         // Find the nearest root that lies in the acceptable range.
         let mut root = (half_b - sqrtd) / a;
-        if root <= t_min || root >= t_max {
-            root = (half_b + sqrtd) / a;
-            if root <= t_min || root >= t_max {
+        if !ray_t.surrounds(root) {
+            root = (half_b +sqrtd) /a;
+            if !ray_t.surrounds(root){
                 return false;
             }
         }
@@ -65,6 +65,7 @@ impl Hittable for Sphere {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::commons::INFINITY;
 
     fn create_sphere() -> Sphere {
         let center = Point3::new(0.0, 0.0, 0.0);
@@ -77,7 +78,7 @@ mod tests {
         let sphere = create_sphere();
         let r = Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 1.0));
         let mut rec = HitRecord::default();
-        let hit = sphere.hit(&r, 0.0, f64::INFINITY, &mut rec);
+        let hit = sphere.hit(&r, Interval::new(0.0, INFINITY), &mut rec);
         assert!(hit);
     }
 
@@ -88,7 +89,7 @@ mod tests {
                 Point3::new(1.0, 0.0, 0.0), 
                 Vec3::new(0.0, 0.0, 1.0));
         let mut rec = HitRecord::default();
-        let hit = sphere.hit(&r, 0.0, f64::INFINITY, &mut rec);
+        let hit = sphere.hit(&r, Interval::new(0.0, INFINITY), &mut rec);
         assert!(!hit);
     }
 
@@ -97,7 +98,7 @@ mod tests {
         let sphere = create_sphere();
         let r = Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 1.0));
         let mut rec = HitRecord::default();// Default is not front face
-        let hit = sphere.hit(&r, 0.0, f64::INFINITY, &mut rec);
+        let hit = sphere.hit(&r, Interval::new(0.0, INFINITY), &mut rec);
         assert!(hit);
         assert!(!rec.front_face); 
         assert_eq!(rec.normal, Vec3::new(0.0, 0.0, -1.0)); // Normal should be outward
