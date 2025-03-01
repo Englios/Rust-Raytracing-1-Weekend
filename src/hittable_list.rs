@@ -3,7 +3,7 @@ use crate::commons::ray::Ray;
 use std::sync::Arc;
 
 
-
+#[derive(Clone)]
 pub struct HittableList {
     objects: Vec<Arc<dyn Hittable>>,
 }
