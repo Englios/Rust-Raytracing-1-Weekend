@@ -2,22 +2,24 @@ use crate::commons::vec3::{Point3, Vec3};
 use crate::commons::ray::Ray;
 use crate::hittable::{Hittable, HitRecord};
 use crate::interval::Interval;
-
+use crate::material::Material;
+use std::sync::Arc;
 
 pub struct Sphere {
     center: Point3,
     radius: f64,
+    material: Option<Arc<dyn Material>>,
 }
 
 impl Default for Sphere {
     fn default() -> Self {
-        Self { center: Point3::default(), radius: 1.0 }
+        Self { center: Point3::default(), radius: 1.0 ,material: None}
     }
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f64) -> Self {
-        Self { center, radius }
+    pub fn new(center: Point3, radius: f64, material: Option<Arc<dyn Material>>) -> Self {
+        Self { center, radius, material }
     }
 }
 
@@ -70,7 +72,7 @@ mod tests {
     fn create_sphere() -> Sphere {
         let center = Point3::new(0.0, 0.0, 0.0);
         let radius = 1.0;
-        Sphere::new(center, radius)
+        Sphere::new(center, radius,None)
     }
 
     #[test]
