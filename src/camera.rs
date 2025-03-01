@@ -102,7 +102,7 @@ impl Camera {
                 let samples_per_pixel = self.samples_per_pixel;
                 let max_depth = self.max_depth;
                 
-                (0..image_width).into_par_iter().map(move |i| {
+                (0..image_width).into_par_iter().with_min_len(32).map(move |i| {
                     let mut pixel_color = Color::new(0.0, 0.0, 0.0);
 
                     for _ in 0..samples_per_pixel {
@@ -172,7 +172,7 @@ impl Camera {
                                 + 0.5 * (self.pixel_du + self.pixel_dv);
 
         // Defocus disk
-        let defocus_radius = self.focus_dist * (self.defocus_angle / 2.0).tan();
+        let defocus_radius = self.focus_dist * (degree_to_rad(self.defocus_angle)/ 2.0).tan();
         self.defocus_disk_u = self.u * defocus_radius;
         self.defocus_disk_v = self.v * defocus_radius;
     }
@@ -216,6 +216,7 @@ impl Camera {
         } else {
             self.defocus_disk_sample()
         };
+
         let ray_direction = pixel_sample - ray_origin;
 
         Ray::new(ray_origin, ray_direction)
