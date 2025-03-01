@@ -19,7 +19,11 @@ impl Default for Sphere {
 
 impl Sphere {
     pub fn new(center: Point3, radius: f64, material: Option<Arc<dyn Material>>) -> Self {
-        Self { center, radius, material }
+        Self { 
+            center, 
+            radius: f64::max(0.0, radius), 
+            material 
+        }
     }
 }
 
