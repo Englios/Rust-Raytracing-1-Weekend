@@ -62,6 +62,7 @@ impl Hittable for Sphere {
         // Determine which side of the sphere the ray hit
         let outward_normal = (rec.p - self.center) / self.radius;
         rec.set_face_normal(r, &outward_normal);
+        rec.material = self.material.clone();
 
         return true;
     }
