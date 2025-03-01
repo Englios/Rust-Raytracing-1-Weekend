@@ -97,6 +97,13 @@ impl Vec3 {
     pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
         v - 2.0 * v.dot(n) * n
     }
+
+    pub fn refract(uv: &Vec3, n: &Vec3, etai_over_etat: f64) -> Vec3 {
+        let cos_theta = f64::min((-uv).dot(*n), 1.0);
+        let r_out_perp = etai_over_etat * (*uv + cos_theta * *n);
+        let r_out_parallel = -f64::sqrt(f64::abs(1.0 - r_out_perp.length_squared())) * *n;
+        r_out_perp + r_out_parallel
+    }
 }
 
 
@@ -104,6 +111,14 @@ impl Vec3 {
 // Operators for Vec3
 impl Neg for Vec3 {
     
+    type Output = Vec3;
+
+    fn neg(self) -> Self::Output {
+        Vec3::new(-self.x(), -self.y(), -self.z())
+    }
+}
+
+impl Neg for &Vec3 {
     type Output = Vec3;
 
     fn neg(self) -> Self::Output {
