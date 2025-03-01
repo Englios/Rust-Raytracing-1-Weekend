@@ -1,6 +1,6 @@
-use crate::commons::{ray::Ray, color::Color};
+use crate::commons::{ray::Ray, color::Color, vec3::Vec3};
 use crate::hittable::HitRecord;
-use crate::commons::vec3::Vec3;
+use crate::commons::random_double;
 
 pub trait Material: Send + Sync { 
     fn scatter(
@@ -81,6 +81,13 @@ impl Dielectric {
     pub fn new(refraction_index: f64) -> Self {
         Self { refraction_index }
     }
+
+    fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
+        let mut r0 = (1.0 - ref_idx) / (1.0 + ref_idx);
+        r0 = r0.powi(2);
+        
+        r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
+    }
 }
 
 impl Material for Dielectric {
@@ -96,8 +103,9 @@ impl Material for Dielectric {
         let cos_theta = (-unit_direction).dot(rec.normal).min(1.0);
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
         let cannot_refract = refraction_ratio * sin_theta > 1.0;
+        let will_reflect = Dielectric::reflectance(cos_theta, refraction_ratio) > random_double();
         
-        let direction = if cannot_refract{
+        let direction = if cannot_refract || will_reflect {
             Vec3::reflect(unit_direction, rec.normal)
         } else {
             Vec3::refract(&unit_direction, &rec.normal, refraction_ratio)
