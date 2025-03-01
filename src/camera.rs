@@ -157,6 +157,7 @@ impl Camera {
                     return attenuation * Self::ray_color(&scattered, depth - 1, world);
                 }
             }
+            
             return Color::new(0.0, 0.0, 0.0);
         }
 
