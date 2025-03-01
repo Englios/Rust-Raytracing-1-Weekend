@@ -5,6 +5,7 @@ mod hittable_list;
 mod commons;
 mod interval;
 mod camera;
+mod material;
 
 use dotenv::dotenv;
 use hittable_list::HittableList;
@@ -24,8 +25,8 @@ fn main() -> std::io::Result<()> {
     //World
     let mut world = HittableList::new();
     let world_list: Vec<Arc<dyn Hittable>> = vec![
-        Arc::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)),
-        Arc::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.00)),
+        Arc::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5,None)),
+        Arc::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.00,None)),
     ];
 
     world.add_multiple(world_list);
