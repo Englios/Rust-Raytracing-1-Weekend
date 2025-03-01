@@ -22,23 +22,40 @@ use material::Metal;
 use material::Dielectric;
 use commons::color::Color;
 
-fn main() -> std::io::Result<()> {
-    dotenv().ok();
+fn main_scene() -> Vec<Arc<dyn Hittable>> {
 
     let material_ground = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
     let material_center = Arc::new(Lambertian::new(Color::new(0.1, 0.2, 0.5)));
-    let material_left = Arc::new(Dielectric::new(1.00/1.33));
-    let material_right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2),1.0));
+    let material_left = Arc::new(Dielectric::new(1.50));
+    let material_bubble = Arc::new(Dielectric::new(1.00/1.50));
 
-    // World
-    //World
-    let mut world = HittableList::new();
     let world_list: Vec<Arc<dyn Hittable>> = vec![
         Arc::new(Sphere::new(Point3::new(0.0, 0.0, -1.2), 0.5, Some(material_center))),
         Arc::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.00, Some(material_ground))),
         Arc::new(Sphere::new(Point3::new(-1.0, 0.0, -1.0), 0.5, Some(material_left))),
+        Arc::new(Sphere::new(Point3::new(-1.0, 0.0, -1.0), 0.4, Some(material_bubble))),
+    ];
+    
+    world_list
+}
+
+fn fov_scene() -> Vec<Arc<dyn Hittable>> {
+    let material_left = Arc::new(Lambertian::new(Color::new(0.0, 0.0, 1.0)));
+    let material_right = Arc::new(Lambertian::new(Color::new(1.0, 0.0, 0.0)));
+
+    let world_list: Vec<Arc<dyn Hittable>> = vec![
+        Arc::new(Sphere::new(Point3::new(-1.0, 0.0, -1.0), 0.5, Some(material_left))),
         Arc::new(Sphere::new(Point3::new(1.0, 0.0, -1.0), 0.5, Some(material_right))),
     ];
+
+    world_list
+}
+
+fn main() -> std::io::Result<()> {
+    dotenv().ok();
+
+    let mut world = HittableList::new();
+    let world_list = fov_scene();
 
     world.add_multiple(world_list);
 
@@ -48,6 +65,7 @@ fn main() -> std::io::Result<()> {
     camera.image_width = 400;
     camera.samples_per_pixel = 100;
     camera.max_depth = 50;
+    camera.vfov = 90.0;
     
     // Output file path
     let image_output_path = std::env::var("IMAGE_OUTPUT")
