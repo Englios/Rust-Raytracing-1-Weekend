@@ -1,5 +1,5 @@
-use crate::vec3::{Point3, Vec3};
-use crate::ray::Ray;
+use crate::commons::vec3::{Point3, Vec3};
+use crate::commons::ray::Ray;
 use crate::hittable::{Hittable, HitRecord};
 
 
@@ -52,6 +52,10 @@ impl Hittable for Sphere {
         rec.t = root;
         rec.p = r.at(rec.t);
         rec.normal = (rec.p - self.center) / self.radius;
+        
+        // Determine which side of the sphere the ray hit
+        let outward_normal = (rec.p - self.center) / self.radius;
+        rec.set_face_normal(r, &outward_normal);
 
         return true;
     }
@@ -86,5 +90,16 @@ mod tests {
         let mut rec = HitRecord::default();
         let hit = sphere.hit(&r, 0.0, f64::INFINITY, &mut rec);
         assert!(!hit);
+    }
+
+    #[test]
+    fn test_sphere_face_normal() {
+        let sphere = create_sphere();
+        let r = Ray::new(Point3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 1.0));
+        let mut rec = HitRecord::default();// Default is not front face
+        let hit = sphere.hit(&r, 0.0, f64::INFINITY, &mut rec);
+        assert!(hit);
+        assert!(!rec.front_face); 
+        assert_eq!(rec.normal, Vec3::new(0.0, 0.0, -1.0)); // Normal should be outward
     }
 }

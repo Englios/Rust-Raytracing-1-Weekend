@@ -1,22 +1,21 @@
+// Imports from files
+mod hittable;
+mod sphere;
+mod hittable_list;
+mod commons;
+
 use dotenv::dotenv;
 use rayon::prelude::*;
-use vec3::{Point3,Vec3};
+use commons::vec3::{Point3,Vec3};
 use std::fs::File;
 use std::io::BufWriter;
 use indicatif::ProgressBar;
 use std::sync::Arc;
 use std::io::Write;
-use crate::color::Color;
-use crate::ray::Ray;
+use commons::color::{Color,write_color};
+use commons::ray::Ray;
 
 
-
-// Imports from files
-mod vec3;
-mod color;
-mod ray;
-mod hittable;
-mod sphere;
 fn main() -> std::io::Result<()> {
     dotenv().ok();
 
@@ -87,7 +86,7 @@ fn main() -> std::io::Result<()> {
                 progress.inc(1);
 
                 // Write pixel color to file
-                let (r, g, b) = color::write_color(&pixel_color);
+                let (r, g, b) = write_color(&pixel_color);
                 (r, g, b)
             })
         })
