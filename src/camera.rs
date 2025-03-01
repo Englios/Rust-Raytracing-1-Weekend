@@ -4,11 +4,12 @@ use crate::commons::color::Color;
 use crate::hittable::{Hittable,HitRecord};
 use crate::interval::Interval;
 use crate::commons::INFINITY;
-use crate::commons::random_double;
+use crate::commons::{random_double,degree_to_rad};
 use indicatif::ProgressBar;
 use crate::commons::color::write_color;
 use rayon::prelude::*;
 use std::sync::Arc;
+use std::f64::consts::*;
 
 #[derive(Clone)]
 pub struct Camera {
@@ -16,6 +17,7 @@ pub struct Camera {
     pub image_width:i32,
     pub samples_per_pixel:i32,
     pub max_depth:i32,
+    pub vfov:f64,
 
     pixel_samples_scale:f64,
     image_height:i32,
@@ -39,6 +41,7 @@ impl Camera {
             samples_per_pixel: 10,
             max_depth: 10,
             image_height: 0,
+            vfov: 90.0,
             pixel_samples_scale: 0.0,
             center: Point3::new(0.0, 0.0, 0.0),
             pixel00_loc: Point3::new(0.0, 0.0, 0.0),
@@ -120,7 +123,9 @@ impl Camera {
         
         //Viewport Dimensions
         let focal_length = 1.0;
-        let viewport_height = 2.0;
+        let theta = degree_to_rad(self.vfov);
+        let h = (theta / 2.0).tan();
+        let viewport_height = 2.0 * h * focal_length;
         let viewport_width = viewport_height * self.aspect_ratio;
 
         // Viewport Vectors
