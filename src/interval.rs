@@ -25,11 +25,11 @@ impl Interval{
     }
 
     //Getters
-    fn min(self) -> f64{
+    pub fn min(self) -> f64{
         self.min
     }
 
-    fn max(self) -> f64{
+    pub fn max(self) -> f64{
         self.max
     }
 
