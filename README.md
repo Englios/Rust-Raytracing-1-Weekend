@@ -2,6 +2,8 @@
 
 A Rust implementation of Peter Shirley's "Ray Tracing in One Weekend" book. This project translates the original C++ code to Rust to explore language differences and learning opportunities.
 
+At first i had some issues with the Dielectric implementation,so i opted to rewrtie everything back again
+
 ## About
 
 This is a learning project that implements a basic ray tracer in Rust. The implementation follows Peter Shirley's book while exploring Rust's unique features and comparing them with C++.
