@@ -1,187 +1,170 @@
-use std::io;
-
-mod vec3;
-mod ray;
-mod sphere;
-mod color;
-mod hittable_list;
+// Imports from files
 mod hittable;
+mod sphere;
+mod hittable_list;
 mod commons;
-mod camera;
 mod interval;
+mod camera;
 mod material;
 
-use commons::INFINITY;
-use hittable::{HitRecord, Hittable};
-use hittable_list::HittableList;
-use material::{Dielectric, Metal,Lambertian};
-use ray::Ray;
-use sphere::Sphere;
-use vec3::{Point3, Vec3};
-use camera::Camera;
-use color::{write_color,Color};
 use dotenv::dotenv;
+use hittable_list::HittableList;
+use hittable::Hittable;
+use commons::vec3::{Point3,Vec3};
+use commons::{PI,random_double};
+use sphere::Sphere;
+use std::fs::File;
+use std::io::BufWriter;
+use camera::Camera;
 use std::sync::Arc;
+use material::{Lambertian, Metal, Dielectric};
+use commons::color::Color;
 
-fn toy_env() -> io::Result<()>{
-    let mut world = HittableList::new();
 
-    // let R = (PI/4.0).cos();
-
+//Scenes
+fn main_scene() -> Vec<Arc<dyn Hittable>> {
 
     let material_ground = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
     let material_center = Arc::new(Lambertian::new(Color::new(0.1, 0.2, 0.5)));
     let material_left = Arc::new(Dielectric::new(1.50));
-    let matrerial_bubble = Arc::new(Dielectric::new(1.0/1.50));
-    let material_right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2),0.7));
+    let material_bubble = Arc::new(Dielectric::new(1.00/1.50));
+    let material_right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2),1.0));
 
-    let spheres: Vec<Box<dyn Hittable>> = vec![
-        // Center sphere
-        Box::new(Sphere::new(Vec3::new(0.0, 0.0, -1.2), 0.5, material_center)),
-        // Left sphere
-        Box::new(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), 0.5, material_left)),
-        // Bubble Sphere
-        Box::new(Sphere::new(Vec3::new(-1.0,0.0,-1.0),0.4,matrerial_bubble)),
-        // Right sphere
-        Box::new(Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, material_right)),
-        // Ground sphere
-        Box::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0, material_ground))
+    let world_list: Vec<Arc<dyn Hittable>> = vec![
+        Arc::new(Sphere::new(Point3::new(0.0, 0.0, -1.2), 0.5, Some(material_center))),
+        Arc::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.00, Some(material_ground))),
+        Arc::new(Sphere::new(Point3::new(-1.0, 0.0, -1.0), 0.5, Some(material_left))),
+        Arc::new(Sphere::new(Point3::new(-1.0, 0.0, -1.0), 0.4, Some(material_bubble))),
+        Arc::new(Sphere::new(Point3::new(1.0, 0.0, -1.0), 0.5, Some(material_right))),
     ];
-    world.add_objects(spheres);
-
-    let aspect_ratio = 16.0/9.0;
-    let image_width = 400;
-    let samples_per_pixel = 200;
-    let max_depth = 100;
-
-    let vfov = 45.0;
-    let lookfrom = Point3::new(0.0,0.0,1.0);
-    let lookat = Point3::new(0.0, 0.0, -1.0);
-    let vup = Vec3::new(0.0, 1.0, 0.0);
-
-    let defocus_angle = 0.0;
-    let focus_dist = 1.0;
     
-    let mut cam = Camera::new(
-                                        aspect_ratio,
-                                        image_width,
-                                        samples_per_pixel,
-                                        max_depth,
-                                        vfov,
-                                        lookfrom,
-                                        lookat,
-                                        vup,
-                                        defocus_angle,
-                                        focus_dist
-                                    );
-
-    cam.render(&world)?;
-
-    Ok(())
+    world_list
 }
 
-fn book_env() -> io::Result<()> {
-    let mut world = HittableList::new();
+fn fov_scene() -> Vec<Arc<dyn Hittable>> {
 
-    // Ground material and sphere
+    let r = (PI / 4.0).cos();
+
+    let material_left = Arc::new(Lambertian::new(Color::new(0.0, 0.0, 1.0)));
+    let material_right = Arc::new(Lambertian::new(Color::new(1.0, 0.0, 0.0)));
+
+    let world_list: Vec<Arc<dyn Hittable>> = vec![
+        Arc::new(Sphere::new(Point3::new(-1.0, 0.0, -1.0), r, Some(material_left))),
+        Arc::new(Sphere::new(Point3::new(1.0, 0.0, -1.0), r, Some(material_right))),
+    ];
+
+    world_list
+}
+
+
+fn book_scene() -> Vec<Arc<dyn Hittable>> {
+
+    let mut world_list: Vec<Arc<dyn Hittable>> = vec![];
+
     let ground_material = Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
-    world.add(Box::new(Sphere::new(
-        Point3::new(0.0, -1000.0, 0.0),
-        1000.0,
-        ground_material,
-    )));
+    let ground = Arc::new(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, Some(ground_material)));
 
-    // Random small spheres
+    world_list.push(ground);
+    
     for a in -11..11 {
         for b in -11..11 {
-            let choose_mat = commons::random_double();
-            let center = Point3::new(
-                a as f64 + 0.9 * commons::random_double(),
-                0.2,
-                b as f64 + 0.9 * commons::random_double(),
-            );
+            let choose_mat = random_double();
+            let center = Point3::new(a as f64 + 0.9 * random_double(), 0.2, b as f64 + 0.9 * random_double());
 
             if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+
                 if choose_mat < 0.8 {
-                    // Diffuse
+                    //Lambertian
                     let albedo = Color::random() * Color::random();
                     let sphere_material = Arc::new(Lambertian::new(albedo));
-                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                    let sphere = Arc::new(Sphere::new(center, 0.2, Some(sphere_material)));
+                    world_list.push(sphere);
                 } else if choose_mat < 0.95 {
-                    // Metal
-                    let albedo = Color::random_range(0.5, 1.0);
-                    let fuzz = commons::random_double() * 0.5;
-                    let sphere_material = Arc::new(Metal::new(albedo, fuzz));
-                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                    //Metal
+                    let sphere_material = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
+                    let sphere = Arc::new(Sphere::new(center, 0.2, Some(sphere_material)));
+                    world_list.push(sphere);
                 } else {
-                    // Glass
+                    //Dielectric
                     let sphere_material = Arc::new(Dielectric::new(1.5));
-                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
-                }
+                    let sphere = Arc::new(Sphere::new(center, 0.2, Some(sphere_material)));
+                    world_list.push(sphere);
+                }   
             }
         }
     }
 
-    // Three large spheres
     let material1 = Arc::new(Dielectric::new(1.5));
-    world.add(Box::new(Sphere::new(
-        Point3::new(0.0, 1.0, 0.0),
-        1.0,
-        material1,
-    )));
+    world_list.push(Arc::new(Sphere::new(Point3::new(0.0, 1.0, 0.0), 1.0, Some(material1))));
 
     let material2 = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
-    world.add(Box::new(Sphere::new(
-        Point3::new(-4.0, 1.0, 0.0),
-        1.0,
-        material2,
-    )));
+    world_list.push(Arc::new(Sphere::new(Point3::new(-4.0, 1.0, 0.0), 1.0, Some(material2))));
 
-    let material3 = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
-    world.add(Box::new(Sphere::new(
-        Point3::new(4.0, 1.0, 0.0),
-        1.0,
-        material3,
-    )));
+    let material3 = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
+    let sphere = Arc::new(Sphere::new(Point3::new(4.0, 1.0, 0.0), 1.0, Some(material3)));
+    world_list.push(sphere);
 
-    // Camera settings
-    let aspect_ratio = 16.0 / 9.0;
-    let image_width = 1200;
-    let samples_per_pixel = 500;
-    let max_depth = 50;
+    world_list
+}
+    
 
-    let vfov = 20.0;
-    let lookfrom = Point3::new(13.0, 2.0, 3.0);
-    let lookat = Point3::new(0.0, 0.0, 0.0);
-    let vup = Vec3::new(0.0, 1.0, 0.0);
+//Camera
+fn main_camera() -> Camera {
+    let mut camera = Camera::new();
+    camera.aspect_ratio = 16.0 / 9.0;
+    camera.image_width = 400;
+    camera.samples_per_pixel = 100;
+    camera.max_depth = 50;
+    camera.vfov = 20.0;
 
-    let defocus_angle = 0.6;
-    let focus_dist = 10.0;
+    camera.lookfrom = Point3::new(-2.0, 2.0, 1.0);
+    camera.lookat = Point3::new(0.0, 0.0, -1.0);
+    camera.vup = Vec3::new(0.0, 1.0, 0.0);
 
-    let mut cam = Camera::new(
-        aspect_ratio,
-        image_width,
-        samples_per_pixel,
-        max_depth,
-        vfov,
-        lookfrom,
-        lookat,
-        vup,
-        defocus_angle,
-        focus_dist,
-    );
+    camera.defocus_angle = 10.0;
+    camera.focus_dist = 3.4;
+    
+    camera
+}
 
-    cam.render(&world)?;
+
+fn book_camera() -> Camera {
+    let mut camera = Camera::new();
+    camera.aspect_ratio = 16.0 / 9.0;
+    camera.image_width = 1200;
+    camera.samples_per_pixel = 500;
+    camera.max_depth = 50;
+
+    camera.vfov = 20.0;
+    camera.lookfrom = Point3::new(13.0, 2.0, 3.0);
+    camera.lookat = Point3::new(0.0, 0.0, 0.0);
+    camera.vup = Vec3::new(0.0, 1.0, 0.0);
+
+    camera.defocus_angle = 0.6;
+    camera.focus_dist = 10.0;
+    
+    camera
+}
+    
+    
+fn main() -> std::io::Result<()> {
+    dotenv().ok();
+
+    let mut world = HittableList::new();
+    let world_list = book_scene();
+
+    world.add_multiple(world_list);
+
+    //Camera
+    let mut camera = book_camera();
+
+    let image_output_path = std::env::var("IMAGE_OUTPUT")
+            .expect("IMAGE_OUTPUT must be set");
+    let file = File::create(image_output_path)?;
+    let mut writer = BufWriter::new(file);
+
+    camera.render(&mut writer, &world)?;
 
     Ok(())
 }
 
-
-
-fn main() -> io::Result<()>{
-    //Load enviroment variables from .env
-    dotenv().ok();
-
-    // book_env()
-    toy_env()
-}
